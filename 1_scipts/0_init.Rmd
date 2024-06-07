@@ -1,0 +1,53 @@
+---
+title: "0_tracker"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+
+
+
+# init
+
+The following code chunks checks if each package is installed and installs it if not.
+It installs the version of the package that the code was tested and used on, however, the version numbers should not matter much.
+It then loads the installed package
+
+```{r}
+# Ensure the remotes package is installed for version-specific installs
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+
+# List of required packages with versions
+required_packages <- list(
+  tidyverse = "2.0.0",
+  magrittr = "2.0.3",
+  data.table = "1.14.8",
+  purrr = "1.0.1",
+  scales = "1.2.1",
+  patchwork = "1.1.2",
+  psych = "2.4.3"
+)
+
+# Function to check if a package is installed and is the correct version
+is_installed <- function(pkg, version) {
+  installed <- is.element(pkg, installed.packages()[, "Package"])
+  if (installed) {
+    installed_version <- as.character(packageVersion(pkg))
+    return(installed_version == version)
+  }
+  return(FALSE)
+}
+
+# Install any packages that are not yet installed or not the specified version
+for (pkg in names(required_packages)) {
+  if (!is_installed(pkg, required_packages[[pkg]])) {
+    remotes::install_version(pkg, version = required_packages[[pkg]], repos = "http://cran.us.r-project.org")
+  }
+}
+
+# Load all required packages
+lapply(names(required_packages), library, character.only = TRUE)
+
+```
