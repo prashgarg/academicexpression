@@ -28,7 +28,7 @@ Each script starts with a layperson explanation to overview the functionality of
 
 This folder contains data used to replicate the main results. The data is called by the respective scripts automatically using relative paths.
 
-NOTE: the GitHub version does not include all data required. Please download the full data required from Zenodo repository: https://zenodo.org/records/11522064
+NOTE: the GitHub version does not include all data required. We will release the data upon publication.
 
 - `data_dictionary.txt`: Provides a description of all variables as they are coded in the various datasets, especially the main author by time level dataset called `repl_df.csv`.
 - Processed data at individual author by time (year by month) level aggregated measures are provided, as raw data containing raw tweets cannot be shared.
