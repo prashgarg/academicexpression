@@ -24,11 +24,11 @@ We have not provided a demo since the actual dataset used for analysis is small 
 
 Each script starts with a layperson explanation to overview the functionality of the code and a pseudocode for a detailed procedure, followed by the actual code.
 
-### 2. `2_data`
+### 2. `2_data` (COMING SOON!)
 
 This folder contains data used to replicate the main results. The data is called by the respective scripts automatically using relative paths.
 
-NOTE: the GitHub version does not include all data required. We will release the data upon publication.
+NOTE: We will release the data upon publication. 
 
 - `data_dictionary.txt`: Provides a description of all variables as they are coded in the various datasets, especially the main author by time level dataset called `repl_df.csv`.
 - Processed data at individual author by time (year by month) level aggregated measures are provided, as raw data containing raw tweets cannot be shared.
