@@ -1,0 +1,243 @@
+---
+title: "1_fig_1"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+
+# Goal: create Figure 1
+
+----------------------------------------------------------------------
+
+# Layperson Explanation:
+
+Load Data: The script starts by loading the dataset from a CSV file into a dataframe.
+Prepare Data for Zipf's Plot: The data is sorted and ranked by different metrics (statuses, favourites, followers, citations).
+Separate Data for Ranks and Actual Values: The data is separated into two dataframes, one for ranks and one for actual values.
+Melt Data for Ranks and Actual Values: The dataframes are melted to reshape them for plotting.
+Adjust 'metric_type' for Better Readability: The levels of 'metric_type' are renamed for better readability in plots.
+Merge Melted Data: The melted dataframes are merged into a single dataframe.
+Filter Non-Finite Values: Non-finite values (e.g., infinite or NaN values) are removed from the dataframe.
+Plot Zipf's Law: A ggplot is created to visualize Zipf's Law across different metrics, with points and a line of best fit.
+Save Plot: The plot is saved as a high-resolution image file.
+
+-----------------------------------------------------------------------
+# Pseudocode:
+
+# Load Data
+LOAD dataset 'df_fig1.csv' into dataframe 'df_fig1'
+
+# Prepare Data for Zipf's Plot
+SORT 'df_fig1' by 'avg_statuses_count' in descending order
+ASSIGN ranks to 'avg_statuses_count' as 'rank_statuses'
+SORT 'df_fig1' by 'avg_favourites_count' in descending order
+ASSIGN ranks to 'avg_favourites_count' as 'rank_favourites'
+SORT 'df_fig1' by 'avg_followers_count' in descending order
+ASSIGN ranks to 'avg_followers_count' as 'rank_followers'
+SORT 'df_fig1' by 'cited_by_count' in descending order
+ASSIGN ranks to 'cited_by_count' as 'rank_cited_by'
+
+# Separate Data for Ranks and Actual Values
+CREATE 'au_bal_ranks' with 'author_id', 'rank_statuses', 'rank_favourites', 'rank_followers', 'rank_cited_by'
+CREATE 'au_bal_values' with 'author_id', 'avg_statuses_count', 'avg_favourites_count', 'avg_followers_count', 'cited_by_count'
+
+# Melt Data for Ranks and Actual Values
+MELT 'au_bal_ranks' into 'au_bal_ranks_melted' with 'author_id', 'metric_type', 'rank'
+MELT 'au_bal_values' into 'au_bal_values_melted' with 'author_id', 'metric_type', 'actual_value'
+
+# Adjust 'metric_type' for Better Readability
+RENAME 'metric_type' levels in 'au_bal_ranks_melted' for readability
+RENAME 'metric_type' levels in 'au_bal_values_melted' for readability
+
+# Merge Melted Data
+MERGE 'au_bal_ranks_melted' and 'au_bal_values_melted' into 'au_bal_merged' by 'author_id' and 'metric_type'
+
+# Filter Non-Finite Values
+REMOVE rows from 'au_bal_merged' where 'log(rank)' or 'log(actual_value)' is not finite
+
+# Plot Zipf's Law
+PLOT 'au_bal_merged' using ggplot2 with:
+    - x-axis: log(rank)
+    - y-axis: log(actual_value)
+    - points colored black
+    - line of best fit colored blue
+    - labels: 'Log(Rank)', 'Log(Value)', 'Zipf's Law for Different Metrics'
+    - facets: 'metric_type'
+
+# Save Plot
+SAVE plot 'zipplot' as 'fig1.jpg' with dpi=300, height=12, width=15
+
+
+# Motivating Correlations
+# Clean the data to remove non-finite values
+FILTER 'df_fig1' to keep only rows where avg_statuses_count, avg_favourites_count, avg_followers_count, and cited_by_count are finite
+STORE the cleaned data as 'df_fig1_clean'
+
+# Calculate the sample size
+CALCULATE sample size 'n' as number of rows in 'df_fig1_clean'
+
+# Define a function to calculate correlation, p-value, and confidence intervals
+CREATE FUNCTION 'correlations' that takes two inputs (x and y), runs Pearson correlation, and returns:
+    - correlation coefficient 'r'
+    - p-value 'p_value'
+    - 95% confidence interval (lower 'ci_lower' and upper 'ci_upper')
+
+# Calculate correlations between metrics and citations
+CALL 'correlations' function for 'cited_by_count' vs 'avg_favourites_count' and store results in 'cor_citations_likes'
+CALL 'correlations' function for 'cited_by_count' vs 'avg_followers_count' and store results in 'cor_citations_followers'
+CALL 'correlations' function for 'cited_by_count' vs 'avg_statuses_count' and store results in 'cor_citations_posts'
+
+# Print Results
+PRINT "Correlation between citations and likes" with r, 95% CI, p-value, and sample size 'n'
+PRINT "Correlation between citations and followers" with r, 95% CI, p-value, and sample size 'n'
+PRINT "Correlation between citations and content creation (posts)" with r, 95% CI, p-value, and sample size 'n'
+
+----------------------------------------------------------------------
+
+# data load
+df_fig1 contains individual level data from Twitter (follower count, favourites count and status count) and from OpenAlex (citation count).
+```{r}
+df_fig1 <- read_csv( "../2_data/df_fig1.csv")
+```
+
+# Prepare data for Zipfs plot
+```{r}
+# Rank the data for each metric and prepare for plotting
+au_bal_ranked <- df_fig1 %>%
+  arrange(desc(avg_statuses_count)) %>%
+  mutate(rank_statuses = row_number()) %>%
+  arrange(desc(avg_favourites_count)) %>%
+  mutate(rank_favourites = row_number()) %>%
+  arrange(desc(avg_followers_count)) %>%
+  mutate(rank_followers = row_number()) %>%
+  arrange(desc(cited_by_count)) %>%
+  mutate(rank_cited_by = row_number())
+
+# Separate the data for ranks and actual values
+au_bal_ranks <- au_bal_ranked %>%
+  select(author_id, rank_statuses, rank_favourites, rank_followers, rank_cited_by)
+
+au_bal_values <- au_bal_ranked %>%
+  select(author_id, avg_statuses_count, avg_favourites_count, avg_followers_count, cited_by_count)
+
+# Melt the data for ranks and actual values
+au_bal_ranks_melted <- melt(au_bal_ranks, 
+                            id.vars = "author_id", 
+                            variable.name = "metric_type", 
+                            value.name = "rank")
+
+au_bal_values_melted <- melt(au_bal_values, 
+                             id.vars = "author_id", 
+                             variable.name = "metric_type", 
+                             value.name = "actual_value")
+
+# Adjust metric_type for better readability in both melted data tables
+au_bal_ranks_melted$metric_type <- factor(au_bal_ranks_melted$metric_type,
+                                          levels = c("rank_statuses", "rank_favourites", "rank_followers", "rank_cited_by"),
+                                          labels = c("Content Creation (Posts)", "Engagement\ (Likes Received)", "Public Reach (Followers)", "Citations Count"))
+
+au_bal_values_melted$metric_type <- factor(au_bal_values_melted$metric_type,
+                                           levels = c("avg_statuses_count", "avg_favourites_count", "avg_followers_count", "cited_by_count"),
+                                           labels = c("Content Creation (Posts)", "Engagement (Likes Received)", "Public Reach (Followers)", "Citations Count"))
+
+# Merge the melted data for ranks and actual values
+au_bal_merged <- merge(au_bal_ranks_melted, au_bal_values_melted, by = c("author_id", "metric_type"))
+
+# Remove non-finite values
+au_bal_merged <- au_bal_merged %>%
+  filter(is.finite(log(rank)), is.finite(log(actual_value)))
+```
+
+# Plot 
+```{r}
+# Plot using ggplot2 with facets
+zipplot <- ggplot(au_bal_merged, aes(x = log(rank), y = log(actual_value))) +
+  geom_point(alpha = 0.6, aes(color = "Point")) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = "Line")) +
+  labs(x = "Log(Rank)", y = "Log(Value)", title = "Zipf's Law for Different Metrics") +
+  facet_wrap(~metric_type, ncol = 2) +
+  # ggthemes::theme_tufte(base_size = 30) +
+  theme_classic(base_size = 30) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_blank(),
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = c("Point" = "black", "Line" = "blue"),
+    labels = c("Point" = "Actual Distribution", "Line" = "Zipf Distribution")
+  )+
+  guides(color = guide_legend(override.aes = list(size = 5)))
+
+zipplot
+```
+
+# Save
+optionally, save the plot to view it clearly as it appears in the paper
+```{r}
+# Save the plot
+ggsave(filename = "fig1.jpg", plot = zipplot, dpi = 300, height = 12, width = 15)
+
+```
+
+# Motivating correlations
+```{r}
+# Clean the data to remove any non-finite values
+df_fig1_clean <- df_fig1 %>%
+  filter(is.finite(avg_statuses_count), is.finite(avg_favourites_count),
+         is.finite(avg_followers_count), is.finite(cited_by_count))
+
+# Calculate sample size
+n <- nrow(df_fig1_clean)
+
+# Calculate correlations with 95% confidence intervals
+correlations <- function(x, y) {
+  cor_test <- cor.test(x, y, method = "pearson")
+  r <- cor_test$estimate
+  p_value <- cor_test$p.value
+  ci_lower <- cor_test$conf.int[1]
+  ci_upper <- cor_test$conf.int[2]
+  result <- list(r = r, p_value = p_value, ci_lower = ci_lower, ci_upper = ci_upper)
+  return(result)
+}
+
+# Correlation between citations and likes
+cor_citations_likes <- correlations(df_fig1_clean$cited_by_count, df_fig1_clean$avg_favourites_count)
+
+# Correlation between citations and followers
+cor_citations_followers <- correlations(df_fig1_clean$cited_by_count, df_fig1_clean$avg_followers_count)
+
+# Correlation between citations and content creation (statuses/posts)
+cor_citations_posts <- correlations(df_fig1_clean$cited_by_count, df_fig1_clean$avg_statuses_count)
+
+# Print results
+cat("Correlation between citations and likes:\n")
+cat(sprintf("r = %.3f, 95%% CI [%.3f, %.3f], p = %.3f, n = %d\n\n", 
+            cor_citations_likes$r,
+            cor_citations_likes$ci_lower,
+            cor_citations_likes$ci_upper,
+            cor_citations_likes$p_value,
+            n))
+
+cat("Correlation between citations and followers:\n")
+cat(sprintf("r = %.3f, 95%% CI [%.3f, %.3f], p = %.3f, n = %d\n\n", 
+            cor_citations_followers$r,
+            cor_citations_followers$ci_lower,
+            cor_citations_followers$ci_upper,
+            cor_citations_followers$p_value,
+            n))
+
+cat("Correlation between citations and content creation (posts):\n")
+cat(sprintf("r = %.3f, 95%% CI [%.3f, %.3f], p = %.3f, n = %d\n", 
+            cor_citations_posts$r,
+            cor_citations_posts$ci_lower,
+            cor_citations_posts$ci_upper,
+            cor_citations_posts$p_value,
+            n))
+
+```
+
+
