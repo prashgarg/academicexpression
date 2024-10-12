@@ -1,0 +1,741 @@
+---
+title: "3_fig_5_to_6"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+
+# Goal: create Figures 5 and 6 
+
+----------------------------------------------------------------------
+# Layperson Explanation:
+
+Load Data: The script starts by loading datasets from CSV files into dataframes.
+Prepare Data for Figure 5: It defines lists and mappings for variables and their labels, conditions for different types, and a function to calculate monthly averages.
+Convert Date Column: Converts date columns to the appropriate format.
+Apply Function to Create Monthly Averages: Applies the function to create monthly averages based on different conditions and combines the results.
+Label and Filter Results: Assigns labels to the combined results and filters out rows without labels. Separates results by variable group.
+Plot Figure 5: Creates and saves plots for different variable groups using ggplot.
+Prepare Data for Figure 6: Combines academic and general population data, converts columns to appropriate types, defines conditions, and applies the function to create monthly averages.
+Label and Filter Results for Figure 6: Assigns labels to the combined results and filters out rows without labels. Separates results by variable group.
+Plot Figure 6: Creates and saves plots for different variable groups using ggplot.
+
+-----------------------------------------------------------------------
+# Pseudocode:
+
+# Load Data
+LOAD datasets 'repl_df.csv' and 'users_df.csv' into dataframes 'repl_df' and 'users_df'
+
+# Figure 5
+
+## Prepare Data
+DEFINE variable list 'variables' for analysis
+DEFINE mapping 'topic_label_mapping' for variable labels
+DEFINE groups of variables 'clim_var', 'econ_var', 'beh_var' for different analysis sections
+
+# Define conditions for Type categories
+DEFINE 'type_conditions' as a list of conditions for filtering data based on various attributes (e.g., gender, field, reach, expertise)
+
+# Function to create monthly averages based on type conditions
+DEFINE function 'create_monthly_avg' to calculate monthly averages for specified variables and conditions
+
+# Convert Date column
+CONVERT 'year_x_month' in 'repl_df' to 'Date' format
+
+# Apply function to create monthly averages
+FOR each type and condition in 'type_conditions'
+    APPLY 'create_monthly_avg' to 'repl_df'
+    STORE results in 'results_list'
+
+# Combine results
+COMBINE 'results_list' into 'results_df_est_comb'
+
+# Label and filter results
+ASSIGN labels to 'results_df_est_comb' based on 'topic_label_mapping'
+FILTER out rows without labels
+GROUP results by 'Main', 'Gender', 'Fields', 'Reach by Expertise', 'University Rankings', 'Country'
+
+# Separate results by variable group
+SEPARATE 'results_df_est_comb' into 'results_df_est_comb_beh_var', 'results_df_est_comb_clim_var', 'results_df_est_comb_econ_var' based on 'beh_var', 'clim_var', 'econ_var'
+
+# Plot Figure 5
+
+## Part a
+PLOT 'results_df_est_comb_beh_var' for 'Main' group using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_a.jpg'
+
+## Part b
+PLOT 'results_df_est_comb_clim_var' for 'Main' group and 'stance_climate_action' using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_b.jpg'
+
+## Part c
+PLOT 'results_df_est_comb_econ_var' for 'Main' group using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_c.jpg'
+
+# Figure 6
+
+## Prepare Data
+COMBINE 'repl_df' and 'users_df' into 'us_aca_users_comb' with 'is_aca' flag indicating academics and general population
+
+# Convert columns to factors and Date
+CONVERT 'indiv_id' and 'year_x_month' to factors, and 'year_x_month' to 'Date' format
+
+# Define conditions for Type categories
+DEFINE 'type_conditions' as a list of conditions for filtering data into 'Academics' and 'General Population'
+
+# Apply function to create monthly averages
+FOR each type and condition in 'type_conditions'
+    APPLY 'create_monthly_avg' to 'us_aca_users_comb'
+    STORE results in 'results_list2'
+
+# Combine results
+COMBINE 'results_list2' into 'results_df_est_comb2'
+
+# Label and filter results
+ASSIGN labels to 'results_df_est_comb2' based on 'topic_label_mapping'
+FILTER out rows without labels
+
+# Separate results by variable group
+SEPARATE 'results_df_est_comb2' into 'results_df_est_comb_beh_var2', 'results_df_est_comb_clim_var2', 'results_df_est_comb_econ_var2' based on 'beh_var', 'clim_var', 'econ_var'
+
+# Plot Figure 6
+
+## Part a
+PLOT 'results_df_est_comb_beh_var2' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_a.jpg'
+
+## Part b
+PLOT 'results_df_est_comb_clim_var2' for 'stance_climate_action' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_b.jpg'
+
+## Part c
+PLOT 'results_df_est_comb_econ_var2' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_c.jpg'
+
+
+----------------------------------------------------------------------
+
+
+
+# data
+```{r}
+repl_df <- read_csv( "../2_data/repl_df.csv")
+users_df <- read_csv( "../2_data/users_df.csv")
+```
+
+# Figure 5 
+## prep 
+```{r}
+variables <- c("egocentrism", "toxicity", "emotionality", "stance_climate_action", "pro_techno_prop", "pro_beh_prop",  "stance_econ_collectivism", "stance_cultural_liberalism") 
+
+topic_label_mapping <- c(
+  "egocentrism" = "Egocentrism",
+  "toxicity" = "Toxicity",
+  "emotionality" = "Emotionality/\nReasoning",
+  "stance_climate_action" = "Climate\nAction",
+  "pro_techno_prop" = "Techno-\nOptimism",
+  "pro_beh_prop" = "Behavioural\nAdjustment",
+  "stance_econ_collectivism" = "Economic\nCollectivism",
+  "stance_cultural_liberalism" = "Cultural\nliberalism"
+)
+
+clim_var <- c("pro_techno_prop", "pro_beh_prop", "stance_climate_action")
+econ_var <- c("stance_cultural_liberalism",  "stance_econ_collectivism")
+beh_var <- c("emotionality", "toxicity",  "egocentrism")
+
+# Define conditions for Type categories using strings for column names
+type_conditions <- list(
+  `Main` = "",  # Main data, no filtering needed
+  `Female` = "is_female == 1",
+  `Male` = "is_male == 1",
+  `Humanities` = "is_humanities == 1",
+  `STEM` = "is_stem == 1",
+  `Soc. Sciences` = "is_soc_sci == 1",
+  `High R-High C` = "type_H_reach_H_cred == 1",
+  `High R-Low C` = "type_H_reach_L_cred == 1",
+  `Low R-High C` = "type_L_reach_H_cred == 1",
+  `Low R-Low C` = "type_L_reach_L_cred == 1",
+  
+  `High R-E (Climate)` = "type_H_reach_H_exp_climate == 1",
+  `High R-Not E (Climate)` = "type_H_reach_L_exp_climate == 1",
+  `Low R-E (Climate)` = "type_L_reach_H_exp_climate == 1",
+  `Low R-Not E (Climate)` = "type_L_reach_L_exp_climate == 1",
+  
+  `High R-E (Culture)` = "type_H_reach_H_exp_cult == 1",
+  `High R-Not E (Culture)` = "type_H_reach_L_exp_cult == 1",
+  `Low R-E (Culture)` = "type_L_reach_H_exp_cult == 1",
+  `Low R-Not E (Culture)` = "type_L_reach_L_exp_cult == 1",
+  
+  `High R-E (Economy)` = "type_H_reach_H_exp_econ == 1",
+  `High R-Not E (Economy)` = "type_H_reach_L_exp_econ == 1",
+  `Low R-E (Economy)` = "type_L_reach_H_exp_econ == 1",
+  `Low R-Not E (Economy)` = "type_L_reach_L_exp_econ == 1",
+  
+  `US` = "is_US == 1",
+  `Non-US` = "is_US == 0",
+  `1-100` = "ranking_1_100 == 1",
+  `100+` = "ranking_1_100 == 0"
+)
+
+# Convert `ranking_cat` and `is_US` into separate dummy variables
+repl_df <- repl_df %>%
+  mutate(
+    ranking_1_100 = ifelse(ranking_cat == "1-100", 1, 0),
+    ranking_101_500 = ifelse(ranking_cat == "101-500", 1, 0),
+    ranking_501_1500 = ifelse(ranking_cat == "501-1500", 1, 0),
+    ranking_1501 = ifelse(ranking_cat == "1501+", 1, 0)
+  )
+
+# Function to create monthly averages based on type conditions
+create_monthly_avg <- function(data, vars, type, condition) {
+  if (condition != "") {
+    data <- data %>% filter(!!rlang::parse_expr(condition))
+  }
+  
+  data %>%
+    select(Date, all_of(vars)) %>%
+    mutate(Date = floor_date(as.Date(Date), "month")) %>%
+    group_by(Date) %>%
+    summarise(across(all_of(vars), mean, na.rm = TRUE), .groups = 'drop') %>%
+    pivot_longer(cols = -Date, names_to = "variable", values_to = "value") %>%
+    mutate(Type = type)  # Assign Type directly
+}
+
+
+repl_df$Date <- as.Date(paste0(repl_df$year_x_month, "_01"), format="%Y_%m_%d")
+
+results_list <- Map(function(type, cond) create_monthly_avg(repl_df, variables, type, cond), 
+                    names(type_conditions), type_conditions)
+
+results_df_est_comb <- bind_rows(results_list)
+
+results_df_est_comb$Label <- topic_label_mapping[results_df_est_comb$variable]
+results_df_est_comb %<>% drop_na(Label)
+
+results_df_est_comb$Group <- with(results_df_est_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("Humanities", "STEM", "Soc. Sciences") ~ "Fields",
+  Type %in% c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C") ~ "Twitter\nReach\n(R) by\nAcademic\nCredibility\n(C)",
+  
+  Type %in% c("High R-E (Climate)", "High R-Not E (Climate)", "Low R-E (Climate)", "Low R-Not E (Climate)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nClimate",
+  Type %in% c("High R-E (Culture)", "High R-Not E (Culture)", "Low R-E (Culture)", "Low R-Not E (Culture)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nCulture",
+  Type %in% c("High R-E (Economy)", "High R-Not E (Economy)", "Low R-E (Economy)", "Low R-Not E (Economy)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nEconomics",
+  Type %in% c("1-100", "100+") ~ "University\nRankings",
+  
+  Type %in% c("US", "Non-US") ~ "Country",
+  TRUE ~ "Other"
+))
+
+
+results_df_est_comb_beh_var <- results_df_est_comb %>% filter(variable %in% beh_var)
+current_levels <- c("Egocentrism","Toxicity", "Emotionality/\nReasoning")
+new_levels <- c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+results_df_est_comb_beh_var$Label <- factor(results_df_est_comb_beh_var$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_clim_var <- results_df_est_comb %>% filter(variable %in% clim_var)
+current_levels <- c("Climate\nAction","Techno-\nOptimism", "Behavioural\nAdjustment")
+new_levels <- c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+results_df_est_comb_clim_var$Label <- factor(results_df_est_comb_clim_var$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_econ_var <- results_df_est_comb %>% filter(variable %in% econ_var)
+current_levels <- c("Cultural\nliberalism","Economic\nCollectivism")
+new_levels <- c("Cultural liberalism","Economic Collectivism")
+results_df_est_comb_econ_var$Label <- factor(results_df_est_comb_econ_var$Label, levels = current_levels, labels = new_levels)
+
+```
+
+## plot
+
+a
+```{r}
+p_clim <- ggplot(results_df_est_comb_beh_var %>% filter(Group=="Main"), aes(x = Date, y = value)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2, color = "black") +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", nrow=3) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+
+p_c <-(p_clim) + plot_layout(widths = c(1), heights = c(3))
+
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig5_a.jpg", p_c, width = 13, height = 20, dpi = 300)
+
+```
+
+b
+```{r}
+p_clim <- ggplot(results_df_est_comb_clim_var %>% filter(Group=="Main") %>%filter(variable=="stance_climate_action"), aes(x = Date, y = value)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2, color = "black") +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", ncol = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+
+p_behtech <- ggplot(results_df_est_comb_clim_var %>% filter(Group=="Main")%>%filter(variable!="stance_climate_action"), aes(x = Date, y = value)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2, color = "black") +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", nrow = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+
+
+p_c <-(p_clim | p_behtech) + plot_layout(widths = c(2, 2), heights = c(1))
+
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig5_b.jpg", p_c, width = 22, height = 9, dpi = 300)
+
+```
+
+c
+```{r}
+p_econ <- ggplot(results_df_est_comb_econ_var %>% filter(Group=="Main"), aes(x = Date, y = value)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2, color = "black") +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", ncol = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig5_c.jpg", p_econ, width = 22, height = 9, dpi = 300)
+
+```
+
+
+
+
+# Figure 6
+## prep
+```{r}
+us_aca_users_comb <-bind_rows(repl_df %>%  
+                           filter(affiliation_country_code=="US") %>%
+                           mutate(indiv_id = as.character(author_id)) %>%
+                           mutate(is_aca = 1),
+                         users_df %>% 
+                           rename(indiv_id = user_id) %>%
+                           select(-is_bot_50) %>%
+                           mutate(is_aca = 0))
+
+us_aca_users_comb$indiv_id <- as.factor(us_aca_users_comb$indiv_id)
+us_aca_users_comb$year_x_month <- as.factor(us_aca_users_comb$year_x_month)
+us_aca_users_comb$Date <- as.Date(paste0(us_aca_users_comb$year_x_month, "_01"), format="%Y_%m_%d")
+
+
+
+type_conditions <- list(
+  Academics = "is_aca == 1",
+  `General Population` = "is_aca == 0"
+)
+
+
+create_monthly_avg <- function(data, vars, type, condition) {
+  if (condition != "") {
+    data <- data %>% filter(!!rlang::parse_expr(condition))
+  }
+  
+  data %>%
+    select(Date, all_of(vars)) %>%
+    mutate(Date = floor_date(as.Date(Date), "month")) %>%
+    group_by(Date) %>%
+    summarise(across(all_of(vars), mean, na.rm = TRUE), .groups = 'drop') %>%
+    pivot_longer(cols = -Date, names_to = "variable", values_to = "value") %>%
+    mutate(Type = type)  # Assign Type directly
+}
+
+results_list2 <- Map(function(type, cond) create_monthly_avg(us_aca_users_comb, variables, type, cond), 
+                    names(type_conditions), type_conditions)
+
+results_df_est_comb2 <- bind_rows(results_list2)
+
+results_df_est_comb2$Label <- topic_label_mapping[results_df_est_comb2$variable]
+results_df_est_comb2 %<>% drop_na(Label)
+
+
+
+results_df_est_comb_beh_var2 <- results_df_est_comb2 %>% filter(variable %in% beh_var)
+current_levels <- c("Egocentrism","Toxicity", "Emotionality/\nReasoning")
+new_levels <- c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+results_df_est_comb_beh_var2$Label <- factor(results_df_est_comb_beh_var2$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_clim_var2 <- results_df_est_comb2 %>% filter(variable %in% clim_var)
+current_levels <- c("Climate\nAction","Techno-\nOptimism", "Behavioural\nAdjustment")
+new_levels <- c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+results_df_est_comb_clim_var2$Label <- factor(results_df_est_comb_clim_var2$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_econ_var2 <- results_df_est_comb2 %>% filter(variable %in% econ_var)
+current_levels <- c("Cultural\nliberalism","Economic\nCollectivism")
+new_levels <- c("Cultural liberalism","Economic Collectivism")
+results_df_est_comb_econ_var2$Label <- factor(results_df_est_comb_econ_var2$Label, levels = current_levels, labels = new_levels)
+
+```
+
+## plot
+
+a 
+```{r}
+p_clim <- ggplot(results_df_est_comb_beh_var2, aes(x = Date, y = value, color = Type)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2) +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", nrow=3) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank(),
+        legend.position = 'top',
+        legend.direction = 'horizontal',
+        legend.title = element_text(size=50),
+        legend.text =  element_text(size=40),
+        legend.key.size = unit(4, "lines"),  # Adjusted for aesthetic balance
+        legend.margin = margin(t = -20, unit = "pt"),  # Reduce top and bottom margin
+        legend.box.margin = margin(0, -10, -10, -10, "pt"))
+
+p_c <-(p_clim) + plot_layout(widths = c(1), heights = c(3))
+
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig6_a", p_c, width = 13, height = 20, dpi = 300)
+```
+
+b
+```{r}
+p_clim <- ggplot(results_df_est_comb_clim_var2  %>%filter(variable=="stance_climate_action"), aes(x = Date, y = value, color = Type)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2) +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", ncol = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+
+p_behtech <- ggplot(results_df_est_comb_clim_var2  %>%filter(variable!="stance_climate_action"), aes(x = Date, y = value, color = Type)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2) +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", nrow = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank())
+
+p_c <-(p_clim | p_behtech) + plot_layout(widths = c(2, 2), heights = c(1), guides = "collect") & theme(legend.position = 'none')
+
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig6_b.jpg", p_c, width = 22, height = 9, dpi = 300)
+
+```
+
+c
+```{r}
+p_econ <- ggplot(results_df_est_comb_econ_var2, aes(x = Date, y = value, color = Type)) +
+  geom_smooth(method = "loess",formula='y~x', se = F, size = 2) +
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", ncol = 2) +  # Ensure Topic is used for faceting
+  ggthemes::theme_tufte(base_size = 60) +
+  theme(axis.title = element_blank(),
+        legend.position = 'none')
+
+# save the plot to view it clearly as it appears in the paper
+ggsave("fig6_c", p_econ, width = 22, height = 9, dpi = 300)
+
+```
+
+
+
+# Statistical Evidence to Support Visual Findings
+
+## Calculate Trends and Statistical Significance
+```{r}
+# Create a time variable (e.g., months since the start)
+repl_df$time <- as.numeric(as.Date(repl_df$Date))  # convert Date to numeric
+
+# Function to run time series regression for each variable
+run_time_series_regression <- function(data, variable) {
+  model <- lm(as.formula(paste(variable, "~ time")), data = data)
+  summary(model)
+}
+
+# List of variables for which to calculate trends
+variables <- c("egocentrism", "toxicity", "emotionality", "stance_climate_action", 
+               "pro_techno_prop", "pro_beh_prop", "stance_econ_collectivism", "stance_cultural_liberalism")
+
+# Run time series regression for each variable and save results
+trend_results <- lapply(variables, function(var) {
+  model_summary <- run_time_series_regression(repl_df, var)
+  coef <- model_summary$coefficients["time", ]
+  data.frame(
+    variable = var,
+    estimate = coef["Estimate"],
+    std_error = coef["Std. Error"],
+    CI_lower = coef["Estimate"] - 1.96 * coef["Std. Error"],
+    CI_upper = coef["Estimate"] + 1.96 * coef["Std. Error"],
+    p_value = coef["Pr(>|t|)"]
+  )
+})
+
+# Combine results into a data frame
+trend_results_df <- do.call(rbind, trend_results)
+trend_results_df
+
+```
+
+## Compare male versus female authors, over time
+```{r}
+# Filter the dataset for the years 2016 and the most recent year available
+df_filtered <- repl_df %>%  filter(year %in% c(2016, max(year)))  # Filter for 2016 and latest year
+
+# Calculate mean support for economic collectivism for male and female authors in 2016 and the latest year
+support_by_gender <- df_filtered %>%
+  group_by(year, is_female) %>%
+  summarise(mean_support = mean(stance_econ_collectivism, na.rm = TRUE),
+            n = n()) %>%
+  ungroup()
+
+# Print the mean support by year and gender
+print(support_by_gender)
+
+# Test for statistical significance (change in economic collectivism stance over time)
+# Separate for male and female authors
+t_test_female <- t.test(stance_econ_collectivism ~ year, data = df_filtered %>% filter(is_female == 1))
+t_test_male <- t.test(stance_econ_collectivism ~ year, data = df_filtered %>% filter(is_female == 0))
+
+# Print t-test results
+print(t_test_female)
+print(t_test_male)
+
+# Calculate percentage change for female authors (2016 vs most recent year)
+female_2016 <- support_by_gender %>% filter(year == 2016 & is_female == 1) %>% pull(mean_support)
+female_latest <- support_by_gender %>% filter(year == max(year) & is_female == 1) %>% pull(mean_support)
+female_percentage_change <- (female_latest - female_2016) / female_2016 * 100
+
+# Calculate percentage change for male authors (2016 vs most recent year)
+male_2016 <- support_by_gender %>% filter(year == 2016 & is_female == 0) %>% pull(mean_support)
+male_latest <- support_by_gender %>% filter(year == max(year) & is_female == 0) %>% pull(mean_support)
+male_percentage_change <- (male_latest - male_2016) / male_2016 * 100
+
+# Print percentage changes
+cat("Percentage change in support for economic collectivism among female authors:", round(female_percentage_change, 2), "%\n")
+cat("Percentage change in support for economic collectivism among male authors:", round(male_percentage_change, 2), "%\n")
+
+```
+
+## Cultural Liberalism: Fields by Year
+```{r}
+# Filter data for years of interest (2016-2022) and cultural liberalism stance
+df_fields <- repl_df %>%
+  filter(year %in% c(2016, max(year))) %>%
+  select(year, is_humanities, is_stem, is_soc_sci, stance_cultural_liberalism)
+
+# Perform t-tests to compare support for cultural liberalism in 2016 vs 2022 for each field
+t_test_humanities <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_humanities == 1))
+t_test_stem <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_stem == 1))
+t_test_soc_sci <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_soc_sci == 1))
+
+# Print t-test results for each field
+cat("Humanities t-test results:\n")
+print(t_test_humanities)
+
+cat("\nSTEM t-test results:\n")
+print(t_test_stem)
+
+cat("\nSocial Sciences t-test results:\n")
+print(t_test_soc_sci)
+
+```
+
+## Cultural Liberalism: US and non-US, by Year
+```{r}
+# Filter data for US and non-US academics for the years of interest (2016-2022)
+df_us_vs_non_us <- repl_df %>%
+  filter(year %in% c(2016, max(year))) %>%
+  select(year, is_US, stance_climate_action, pro_techno_prop)
+
+# Perform t-tests for climate action and techno-optimism comparing US vs Non-US
+t_test_climate_us_vs_non_us <- t.test(stance_climate_action ~ is_US, data = df_us_vs_non_us)
+t_test_techno_us_vs_non_us <- t.test(pro_techno_prop ~ is_US, data = df_us_vs_non_us)
+
+# Print t-test results
+cat("Climate Action t-test results (US vs Non-US):\n")
+print(t_test_climate_us_vs_non_us)
+
+cat("\nTechno-Optimism t-test results (US vs Non-US):\n")
+print(t_test_techno_us_vs_non_us)
+
+```
+
+## General users in 2022
+```{r}
+# Filter data for the year 2022 for Egocentrism
+df_egocentrism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, egocentrism)
+
+# Perform t-test comparing egocentrism between academics and general population
+t_test_egocentrism <- t.test(egocentrism ~ is_aca, data = df_egocentrism_2022)
+
+# Print results
+print(t_test_egocentrism)
+
+# Filter data for the year 2022 for Toxicity
+df_toxicity_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, toxicity)
+
+# Perform t-test comparing toxicity between academics and general population
+t_test_toxicity <- t.test(toxicity ~ is_aca, data = df_toxicity_2022)
+
+# Print results
+print(t_test_toxicity)
+
+# Filter data for the year 2022 for Emotionality
+df_emotionality_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, emotionality)
+
+# Perform t-test comparing emotionality between academics and general population
+t_test_emotionality <- t.test(emotionality ~ is_aca, data = df_emotionality_2022)
+
+# Print results
+print(t_test_emotionality)
+
+# Filter data for stance on climate action in 2022
+df_climate_action_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_climate_action)
+
+# Perform t-test comparing climate action stance between academics and general population
+t_test_climate_action <- t.test(stance_climate_action ~ is_aca, data = df_climate_action_2022)
+
+# Print results
+print(t_test_climate_action)
+
+# Filter data for stance on cultural liberalism in 2022
+df_cultural_liberalism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_cultural_liberalism)
+
+# Perform t-test comparing cultural liberalism stance between academics and general population
+t_test_cultural_liberalism <- t.test(stance_cultural_liberalism ~ is_aca, data = df_cultural_liberalism_2022)
+
+# Print results
+print(t_test_cultural_liberalism)
+
+# Filter data for stance on economic collectivism in 2022
+df_econ_collectivism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_econ_collectivism)
+
+# Perform t-test comparing economic collectivism stance between academics and general population
+t_test_econ_collectivism <- t.test(stance_econ_collectivism ~ is_aca, data = df_econ_collectivism_2022)
+
+# Print results
+print(t_test_econ_collectivism)
+
+```
+
+## Temporal Comparison (Pre-2020 vs Post-2020)
+
+Academics
+```{r}
+# Filter data for pre-pandemic (before 2020) and post-pandemic (2020 onward) comparison
+df_climate_temporal <- us_aca_users_comb %>%
+  filter(year(Date) %in% c(2016:2022)) %>%
+  mutate(period = ifelse(year(Date) < 2020, "Pre-Pandemic", "Post-Pandemic"))
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for climate action among academics
+t_test_climate_temporal <- t.test(stance_climate_action ~ period, data = df_climate_temporal %>% filter(is_aca == 1))
+
+# Print results
+print(t_test_climate_temporal)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for economic collectivism among academics
+t_test_econ_temporal <- t.test(stance_econ_collectivism ~ period, data = df_climate_temporal %>% filter(is_aca == 1))
+
+# Print results
+print(t_test_econ_temporal)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for climate action among academics
+t_test_climate_temporal_users <- t.test(stance_climate_action ~ period, data = df_climate_temporal %>% filter(is_aca == 0))
+
+# Print results
+print(t_test_climate_temporal_users)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for economic collectivism among academics
+t_test_econ_temporal_users <- t.test(stance_econ_collectivism ~ period, data = df_climate_temporal %>% filter(is_aca == 0))
+
+# Print results
+print(t_test_econ_temporal_users)
+
+```
+
+## Calculate the mean, standard deviation (SD), and 95% confidence intervals (CIs) for various expressions
+
+```{r}
+# Function to calculate mean, sd, and 95% CI
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Split the data into academics and general users
+df_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+df_general_users <- us_aca_users_comb %>% filter(is_aca == 0)
+
+# Variables of interest
+variables <- c("stance_climate_action", "pro_techno_prop", "pro_beh_prop")
+
+# Calculate statistics for academics
+cat("Academics:\n")
+for (variable in variables) {
+  stats <- calculate_stats_base_r(df_academics, variable)
+  print(paste("Mean for", variable, ": ", stats$mean))
+  print(paste("SD for", variable, ": ", stats$sd))
+  print(paste("95% CI for", variable, ": (", stats$ci_lower, ", ", stats$ci_upper, ")"))
+}
+
+# Calculate statistics for general users
+cat("\nGeneral Users:\n")
+for (variable in variables) {
+  stats <- calculate_stats_base_r(df_general_users, variable)
+  print(paste("Mean for", variable, ": ", stats$mean))
+  print(paste("SD for", variable, ": ", stats$sd))
+  print(paste("95% CI for", variable, ": (", stats$ci_lower, ", ", stats$ci_upper, ")"))
+}
+
+# Calculate ratios between academics and general users for stance_climate_action, pro_techno_prop, and pro_beh_prop
+calculate_ratio <- function(data1, data2, variable) {
+  mean1 <- mean(data1[[variable]], na.rm = TRUE)
+  mean2 <- mean(data2[[variable]], na.rm = TRUE)
+  
+  ratio <- mean1 / mean2
+  ratio
+}
+
+cat("\nRatios (Academics vs General Users):\n")
+for (variable in variables) {
+  ratio <- calculate_ratio(df_academics, df_general_users, variable)
+  print(paste("Ratio for", variable, ": ", ratio))
+}
+
+
+```
