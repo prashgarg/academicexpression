@@ -1,0 +1,53 @@
+Data Dictionary
+
+Variable Name                      Type    Description
+--------------------------------------------------------------------------------
+author_id                          chr     Unique anonymised identifier for each author.
+affiliation_country_code           chr     Country code of the author's affiliation.
+affiliation_display_name           chr     Display name of the author's affiliation.
+year                               chr     Year of the data entry.
+month                              chr     Month of the data entry.
+year_x_month                       Factor  Combined year and month.
+stance_climate_action              num     Stance on climate action at year by month level.
+stance_econ_collectivism           num     Stance on economic collectivism at year by month level.
+stance_cultural_liberalism         num     Stance on cultural liberalism at year by month level.
+pro_techno_prop                    num     Stance on techno-optimism at year by month level.
+pro_beh_prop                       num     Stance on behavioral adjustment at year by month level.
+pro_techno_both_prop               num     Stance on techno-optimism, including both techno-optimist and behavioral adjustment at year by month level.
+pro_beh_both_prop                  num     Stance on behavioral adjustment, including both behavioral adjustment and techno-optimism at year by month level.
+toxicity                           num     Toxicity level at year by month level.
+emotionality                       num     Emotionality level at year by month level.
+egocentrism                        num     Egocentrism level at year by month level.
+cited_by_count                     int     Number of times the author is cited.
+impact_factor                      num     Impact factor of the author's work.
+works_count                        int     Number of works by the author.
+primary_concept                    chr     Primary concept/field of the author.
+type_H_reach_H_cred                num     Binary: High Twitter reach and high academic credibility.
+type_H_reach_L_cred                num     Binary: High Twitter reach and low academic credibility.
+type_L_reach_H_cred                num     Binary: Low Twitter reach and high academic credibility.
+type_L_reach_L_cred                num     Binary: Low Twitter reach and low academic credibility.
+is_humanities                      num     Binary: Whether the author is in humanities.
+is_stem                            num     Binary: Whether the author is in STEM.
+is_soc_sci                         num     Binary: Whether the author is in social sciences.
+is_male                            num     Binary: Whether the author is male.
+is_female                          num     Binary: Whether the author is female.
+is_US                              num     Binary: Whether the author is based in the US in a given year.
+ranking_cat	                   chr     Categorical: One of the four university ranking categories an academic's university at a given year belongs to.
+is_more_impactful_field            num     Binary: Whether the author is in a more impactful field.
+is_above_75_not_25_impact          num     Binary: Whether the author's impact is above the 75th percentile and not below the 25th percentile.
+has_more_followers                 num     Binary: Whether the author has more followers.
+is_climate_expert                  num     Binary: Whether the author is a climate expert.
+is_culture_expert                  num     Binary: Whether the author is a culture expert.
+is_econ_expert                     num     Binary: Whether the author is an economics expert.
+type_H_reach_H_exp_climate         num     Binary: High Twitter reach and high expertise in climate.
+type_H_reach_L_exp_climate         num     Binary: High Twitter reach and low expertise in climate.
+type_L_reach_H_exp_climate         num     Binary: Low Twitter reach and high expertise in climate.
+type_L_reach_L_exp_climate         num     Binary: Low Twitter reach and low expertise in climate.
+type_H_reach_H_exp_cult            num     Binary: High Twitter reach and high expertise in culture.
+type_H_reach_L_exp_cult            num     Binary: High Twitter reach and low expertise in culture.
+type_L_reach_H_exp_cult            num     Binary: Low Twitter reach and high expertise in culture.
+type_L_reach_L_exp_cult            num     Binary: Low Twitter reach and low expertise in culture.
+type_H_reach_H_exp_econ            num     Binary: High Twitter reach and high expertise in economics.
+type_H_reach_L_exp_econ            num     Binary: High Twitter reach and low expertise in economics.
+type_L_reach_H_exp_econ            num     Binary: Low Twitter reach and high expertise in economics.
+type_L_reach_L_exp_econ            num     Binary: Low Twitter reach and low expertise in economics.
