@@ -1,0 +1,2801 @@
+---
+title: "2_fig_2_to_4"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+# Goal: create Figures 2 to 4, and Extended Data Figures 2 to 4
+
+----------------------------------------------------------------------
+
+
+# Layperson Explanation:
+Load Data: The script starts by loading datasets from CSV files into dataframes.
+Prepare Variables and Names: It defines lists and mappings for variables and their labels.
+Function to Calculate Statistics: A function is defined to calculate mean, standard error, and confidence intervals.
+Main Figures: The script calculates statistics and creates plots for different groups of variables (climate, economic, behavioral). Each figure involves similar steps: calculating stats for different subgroups, labeling variables, and plotting data.
+Extended Data Figures: Similar to the main figures, but with additional normalization relative to the US general population.
+Save Plots: Optionally save the plots as high-resolution images.
+
+-----------------------------------------------------------------------
+
+# Pseudocode:
+
+# Load Data
+LOAD datasets 'repl_df.csv' and 'users_df.csv' into dataframes 'repl_df' and 'users_df'
+
+# Prepare Variables and Names
+DEFINE variable list 'variables' for analysis
+DEFINE mapping 'topic_label_mapping' for variable labels
+
+DEFINE groups of variables 'clim_var', 'econ_var', 'beh_var' for different analysis sections
+
+# Function to Calculate Statistics
+DEFINE function 'calculate_stats' to calculate mean, standard error, and confidence intervals for a given data column
+
+# Main Figures
+
+## Figure 2: Climate Variables
+FOR each variable in 'clim_var'
+    CALCULATE stats for the whole dataset, females, males, STEM, social sciences, humanities
+    CALCULATE stats for high and low reach and expertise in climate, top and non-top 100 universities, US and non-US
+    CALCULATE stats for climate experts and non-experts
+    COMBINE results into dataframes for field, reach by expertise, gender, rank, and country groups
+
+    LABEL variables and ensure correct factor levels
+    ADD main mean for each label
+    PLOT data with ggplot, including points and error bars, faceted by group and label
+
+## Figure 3: Economic Variables
+FOR each variable in 'econ_var'
+    REPEAT the above steps for calculating stats and plotting
+    CALCULATE stats for high and low reach and expertise in economy and culture
+
+## Figure 4: Behavioral Variables
+FOR each variable in 'beh_var'
+    REPEAT the above steps for calculating stats and plotting
+    CALCULATE stats for high and low reach and credibility
+
+# Extended Data Figures
+
+## Extended Data Figure 2: Climate Variables
+FOR each variable in 'clim_var'
+    CALCULATE stats as for Figure 2
+    CALCULATE stats for US users
+    NORMALIZE values relative to US general population
+    PLOT data with ggplot, faceted by group and label
+
+## Extended Data Figure 3: Economic Variables
+FOR each variable in 'econ_var'
+    CALCULATE stats as for Figure 3
+    CALCULATE stats for US users
+    NORMALIZE values relative to US general population
+    PLOT data with ggplot, faceted by group and label
+
+## Extended Data Figure 4: Behavioral Variables
+FOR each variable in 'beh_var'
+    CALCULATE stats as for Figure 4
+    CALCULATE stats for US users
+    NORMALIZE values relative to US general population
+    PLOT data with ggplot, faceted by group and label
+
+# Save Plots
+OPTIONALLY save each plot as a high-resolution image file
+
+# Conducts Statistical Tests and Provides Wide Range of Evidence for Statistical Reporting
+----------------------------------------------------------------------
+
+
+
+# data
+```{r}
+repl_df <- read_csv( "../2_data/repl_df.csv")
+users_df <- read_csv( "../2_data/users_df.csv")
+```
+
+
+
+# prep
+variables and names
+```{r}
+variables <- c("egocentrism", "toxicity", "emotionality", "stance_climate_action", "pro_techno_prop", "pro_beh_prop",  "stance_econ_collectivism", "stance_cultural_liberalism") 
+
+topic_label_mapping <- c(
+  "egocentrism" = "Egocentrism",
+  "toxicity" = "Toxicity",
+  "emotionality" = "Emotionality/Reasoning",
+  "stance_climate_action" = "Climate Action",
+  "pro_techno_prop" = "Techno-Optimism",
+  "pro_beh_prop" = "Behavioural Adjustment",
+  "stance_econ_collectivism" = "Economic Collectivism",
+  "stance_cultural_liberalism" = "Cultural Liberalism"
+)
+
+clim_var <- c("pro_techno_prop", "pro_beh_prop", "stance_climate_action")
+econ_var <- c("stance_cultural_liberalism",  "stance_econ_collectivism")
+beh_var <- c("emotionality", "toxicity",  "egocentrism")
+```
+
+function to calc
+```{r}
+# Function to calculate mean, standard error, and confidence intervals for given data column
+calculate_stats <- function(data, var_name) {
+  var_data <- na.omit(data[[var_name]])  # Remove NA values
+  n <- length(var_data)
+  mean_val <- mean(var_data)
+  std_error <- sd(var_data) / sqrt(n)
+  z <- qnorm(0.975)  # 95% CI
+  ci_lower <- mean_val - z * std_error
+  ci_upper <- mean_val + z * std_error
+  
+  data.frame(
+    Term = var_name,
+    Mean = mean_val,
+    StdError = std_error,
+    CI_lower = ci_lower,
+    CI_upper = ci_upper
+  )
+}
+```
+
+# Main Figures
+Figure 2
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(clim_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_climate==1), .x))
+stats_pol_type_H_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_climate==1), .x))
+stats_pol_type_L_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_climate==1), .x))
+stats_pol_type_L_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_climate==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_is_climate_expert <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_climate_expert==1), .x))
+stats_pol_does_do_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_climate_expert==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_exp_climate <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_climate, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_climate, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_climate, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_climate, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_climate$Type <- factor(stats_pol_reach_by_exp_climate$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_reach_by_exp_climate$Label <- factor(stats_pol_reach_by_exp_climate$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_exp_climate, stats_pol_gender, stats_pol_rank, stats_pol_US)
+
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Expertise (E)",
+    "University Rankings",
+    "Country"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US"
+))
+
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
+  "Low R-E" = "#999999", "Low R-Not E" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+p_all <- ggplot(stats_pol_comb %>% filter(Term %in% clim_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey30", size = 0.5, alpha = 0.8) +  # Adjusted line thickness
+  geom_vline(aes(xintercept = 0), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +  # Adjusted line thickness
+  geom_point(size = 2) +  # Reduced point size for journal compliance
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +  # Adjusted error bar thickness
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = "") +  # Removed title for a cleaner look
+  theme_classic(base_size = 7) +  # Use journal-compliant font size
+  theme(
+    text = element_text(family = "Helvetica", size = 7),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none",
+    axis.text.y = element_text(size = 7, color = "grey30"),
+    axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+    strip.text = element_text(size = 7, face = "bold"),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing.y = unit(0.5, "lines"),
+    panel.spacing.x = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("fig2.eps", p_all, device = cairo_ps, width = 180 / 25.4, height = 180 / 25.4)
+ggsave("fig2.pdf", p_all, device = cairo_pdf, width = 180 / 25.4, height = 180 / 25.4)
+
+```
+
+Figure 3
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(econ_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_econ==1), .x))
+stats_pol_type_H_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_econ==1), .x))
+stats_pol_type_L_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_econ==1), .x))
+stats_pol_type_L_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_econ==1), .x))
+
+stats_pol_type_H_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_cult==1), .x))
+stats_pol_type_H_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_cult==1), .x))
+stats_pol_type_L_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_cult==1), .x))
+stats_pol_type_L_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_cult==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_exp_econ <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_econ, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_econ, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_econ, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_econ, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_econ$Type <- factor(stats_pol_reach_by_exp_econ$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_reach_by_exp_cult <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_cult, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_cult, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_cult, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_cult, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_cult$Type <- factor(stats_pol_reach_by_exp_cult$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_reach_by_exp_econ$Label <- factor(stats_pol_reach_by_exp_econ$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_reach_by_exp_cult$Label <- factor(stats_pol_reach_by_exp_cult$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, 
+                            stats_pol_reach_by_exp_econ %>%mutate(exp="econ"), 
+                            stats_pol_reach_by_exp_cult%>%mutate(exp="cult"), 
+                            stats_pol_gender, stats_pol_rank, stats_pol_US)
+
+stats_pol_comb %<>% mutate(exp = ifelse(is.na(exp),"other", exp))
+# Filter out the rows that don't meet the condition
+stats_pol_comb %<>%
+  filter(!(Label == "Cultural Liberalism" & exp == "econ")) %>%
+  filter(!(Label == "Economic Collectivism" & exp == "cult"))
+stats_pol_comb %<>% select(-exp)
+
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Expertise (E)",
+    "University Rankings",
+    "Country"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US"
+))
+
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
+  "Low R-E" = "#999999", "Low R-Not E" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Cultural Liberalism","Economic Collectivism")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+# Adjusted Figure 3 plot
+p_all_fig3 <- ggplot(stats_pol_comb %>% filter(Term %in% econ_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey60", size = 0.5) +
+  geom_vline(aes(xintercept = 0), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +  # Adjusted line thickness
+  geom_point(size = 2) +
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = NULL) +
+  theme_classic(base_size = 7) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text.x = element_text(size = 7, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("fig3.eps", p_all_fig3, width = 180 / 25.4, height = 180 / 25.4, device = cairo_ps)
+ggsave("fig3.pdf", p_all_fig3, width = 180 / 25.4, height = 180 / 25.4, device = cairo_pdf)
+
+
+```
+
+
+Figure 4
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(beh_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_cred==1), .x))
+stats_pol_type_H_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_cred==1), .x))
+stats_pol_type_L_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_cred==1), .x))
+stats_pol_type_L_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_cred==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_cred <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_cred, Type = "High R-High C"),
+  mutate(stats_pol_type_H_reach_L_cred, Type = "High R-Low C"),
+  mutate(stats_pol_type_L_reach_H_cred, Type = "Low R-High C"),
+  mutate(stats_pol_type_L_reach_L_cred, Type = "Low R-Low C")
+)
+stats_pol_reach_by_cred$Type <- factor(stats_pol_reach_by_cred$Type, levels = c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_reach_by_cred$Label <- factor(stats_pol_reach_by_cred$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_cred, stats_pol_gender, stats_pol_rank, stats_pol_US)
+
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C") ~ "Reach (R) by Credibility (C)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Credibility (C)",
+    "University Rankings",
+    "Country"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US"
+))
+
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-High C" = "#A65628", "High R-Low C" = "#F781BF",
+  "Low R-High C" = "#999999", "Low R-Low C" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+# Adjusted Figure 4 plot
+p_all_fig4 <- ggplot(stats_pol_comb %>% filter(Term %in% beh_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  # Conditional vertical lines based on Label
+  geom_vline(data = stats_pol_comb %>% distinct(Label) %>% 
+               mutate(xintercept = ifelse(Label == "Emotionality/Reasoning", 1, 0)),
+             aes(xintercept = xintercept), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey60", size = 0.5) +
+  geom_point(size = 2) +
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = NULL) +
+  theme_classic(base_size = 7) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text.x = element_text(size = 7, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("fig4.eps", p_all_fig4, width = 180 / 25.4, height = 180 / 25.4, device = cairo_ps)
+ggsave("fig4.pdf", p_all_fig4, width = 180 / 25.4, height = 180 / 25.4, device = cairo_pdf)
+
+```
+
+
+# Extended Data Figures
+
+
+
+Extended Data Figure 2
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(clim_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_climate==1), .x))
+stats_pol_type_H_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_climate==1), .x))
+stats_pol_type_L_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_climate==1), .x))
+stats_pol_type_L_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_climate==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_us_users <- map_df(clim_var, ~calculate_stats(users_df %>% filter(is_bot_50==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_exp_climate <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_climate, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_climate, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_climate, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_climate, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_climate$Type <- factor(stats_pol_reach_by_exp_climate$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_us_users$Type <- "US users"
+stats_pol_us_users$Type <- factor(stats_pol_us_users$Type, levels = "US users")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_reach_by_exp_climate$Label <- factor(stats_pol_reach_by_exp_climate$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_exp_climate, stats_pol_gender, stats_pol_rank, stats_pol_US, stats_pol_us_users)
+
+# Extract the US users values for each Term
+us_users_values <- stats_pol_comb %>%
+  filter(Type == "US users") %>%
+  select(Term, Mean, StdError, CI_lower, CI_upper) %>%
+  rename(US_users_Mean = Mean, US_users_StdError = StdError, US_users_CI_lower = CI_lower, US_users_CI_upper = CI_upper)
+
+# Join the US users values with the original dataframe
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(us_users_values, by = "Term") %>%
+  mutate(
+    Mean = Mean / US_users_Mean,
+    StdError = StdError / US_users_StdError,
+    CI_lower = CI_lower / US_users_CI_lower,
+    CI_upper = CI_upper / US_users_CI_upper
+  ) %>%
+  select(Term, Type, Label, Mean, StdError, CI_lower, CI_upper)
+
+stats_pol_comb %<>% filter(Type!="US users")
+
+# stats_pol_climate
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country",
+  Type %in% c("US users") ~ "US General Twitter Users"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Expertise (E)",
+    "University Rankings",
+    "Country",
+    "US General Twitter Users"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US",
+  "US users"
+))
+
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
+  "Low R-E" = "#999999", "Low R-Not E" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40",
+  "US users" = "purple3"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+p_all <- ggplot(stats_pol_comb %>% filter(Term %in% clim_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey30", size = 0.5, alpha = 0.8) +  # Adjusted line thickness
+  geom_vline(aes(xintercept = 0), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +  # Adjusted line thickness
+  geom_point(size = 2) +  # Reduced point size for journal compliance
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +  # Adjusted error bar thickness
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = "") +  # Removed title for a cleaner look
+  theme_classic(base_size = 7) +  # Use journal-compliant font size
+  theme(
+    text = element_text(family = "Helvetica", size = 7),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none",
+    axis.text.y = element_text(size = 7, color = "grey30"),
+    axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+    strip.text = element_text(size = 7, face = "bold"),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing.y = unit(0.5, "lines"),
+    panel.spacing.x = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("edf2.eps", p_all, device = cairo_ps, width = 180 / 25.4, height = 180 / 25.4)
+ggsave("edf2.pdf", p_all, device = cairo_pdf, width = 180 / 25.4, height = 180 / 25.4)
+
+```
+ 
+Extended Data Figure 3
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(econ_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_econ==1), .x))
+stats_pol_type_H_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_econ==1), .x))
+stats_pol_type_L_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_econ==1), .x))
+stats_pol_type_L_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_econ==1), .x))
+
+stats_pol_type_H_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_cult==1), .x))
+stats_pol_type_H_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_cult==1), .x))
+stats_pol_type_L_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_cult==1), .x))
+stats_pol_type_L_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_cult==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_us_users <- map_df(econ_var, ~calculate_stats(users_df%>% filter(is_bot_50==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_exp_econ <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_econ, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_econ, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_econ, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_econ, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_econ$Type <- factor(stats_pol_reach_by_exp_econ$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_reach_by_exp_cult <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_exp_cult, Type = "High R-E"),
+  mutate(stats_pol_type_H_reach_L_exp_cult, Type = "High R-Not E"),
+  mutate(stats_pol_type_L_reach_H_exp_cult, Type = "Low R-E"),
+  mutate(stats_pol_type_L_reach_L_exp_cult, Type = "Low R-Not E")
+)
+stats_pol_reach_by_exp_cult$Type <- factor(stats_pol_reach_by_exp_cult$Type, levels = c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_us_users$Type <- "US users"
+stats_pol_us_users$Type <- factor(stats_pol_us_users$Type, levels = "US users")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_reach_by_exp_econ$Label <- factor(stats_pol_reach_by_exp_econ$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_reach_by_exp_cult$Label <- factor(stats_pol_reach_by_exp_cult$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, 
+                            stats_pol_reach_by_exp_econ %>%mutate(exp="econ"), 
+                            stats_pol_reach_by_exp_cult%>%mutate(exp="cult"), 
+                            stats_pol_gender, stats_pol_rank, stats_pol_US,stats_pol_us_users)
+
+stats_pol_comb %<>% mutate(exp = ifelse(is.na(exp),"other", exp))
+# Filter out the rows that don't meet the condition
+stats_pol_comb %<>%
+  filter(!(Label == "Cultural Liberalism" & exp == "econ")) %>%
+  filter(!(Label == "Economic Collectivism" & exp == "cult"))
+stats_pol_comb %<>% select(-exp)
+
+# Extract the US users values for each Term
+us_users_values <- stats_pol_comb %>%
+  filter(Type == "US users") %>%
+  select(Term, Mean, StdError, CI_lower, CI_upper) %>%
+  rename(US_users_Mean = Mean, US_users_StdError = StdError, US_users_CI_lower = CI_lower, US_users_CI_upper = CI_upper)
+
+# Join the US users values with the original dataframe
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(us_users_values, by = "Term") %>%
+  mutate(
+    Mean = Mean / US_users_Mean,
+    StdError = StdError / US_users_StdError,
+    CI_lower = CI_lower / US_users_CI_lower,
+    CI_upper = CI_upper / US_users_CI_upper
+  ) %>%
+  select(Term, Type, Label, Mean, StdError, CI_lower, CI_upper)
+
+stats_pol_comb %<>% filter(Type!="US users")
+
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country",
+  Type %in% c("US users") ~ "US General Twitter Users"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Expertise (E)",
+    "University Rankings",
+    "Country",
+    "Field Match",
+    "US General Twitter Users"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US",
+  "Does Culture", "Does Economics", "Does Neither",
+  "US users"
+))
+
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
+  "Low R-E" = "#999999", "Low R-Not E" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40",
+  "Does Culture" = "cyan3", "Does Economics" = "orange2", "Does Neither" = "grey40",
+  "US users"="purple3"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Cultural Liberalism","Economic Collectivism")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+
+# Adjusted Figure 3 plot
+p_all_fig3 <- ggplot(stats_pol_comb %>% filter(Term %in% econ_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey60", size = 0.5) +
+  geom_vline(aes(xintercept = 0), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +  # Adjusted line thickness
+  geom_point(size = 2) +
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = NULL) +
+  theme_classic(base_size = 7) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text.x = element_text(size = 7, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("edf3.eps", p_all_fig3, width = 180 / 25.4, height = 180 / 25.4, device = cairo_ps)
+ggsave("edf3.pdf", p_all_fig3, width = 180 / 25.4, height = 180 / 25.4, device = cairo_pdf)
+
+```
+ 
+
+Extended Data Figure 4
+```{r}
+# Map the function over each variable group and combine results
+stats_pol_main <- map_df(beh_var, ~calculate_stats(repl_df, .x))
+
+stats_pol_is_female <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+
+stats_pol_is_stem <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+
+stats_pol_type_H_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_cred==1), .x))
+stats_pol_type_H_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_cred==1), .x))
+stats_pol_type_L_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_cred==1), .x))
+stats_pol_type_L_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_cred==1), .x))
+
+stats_pol_ranking_1_100 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100$Type <- "1-100"
+
+stats_pol_ranking_101_500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500$Type <- "101-500"
+
+stats_pol_ranking_501_1500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500$Type <- "501-1500"
+
+stats_pol_ranking_1501 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501$Type <- "1501+"
+
+stats_pol_is_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
+stats_pol_isnt_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
+
+stats_pol_us_users <- map_df(beh_var, ~calculate_stats(users_df %>% filter(is_bot_50==0), .x))
+
+stats_pol_field <- bind_rows(
+  mutate(stats_pol_is_humanities, Type = "Humanities"),
+  mutate(stats_pol_is_soc_sci, Type = "Soc. Sciences"),
+  mutate(stats_pol_is_stem, Type = "STEM")
+)
+stats_pol_field$Type <- factor(stats_pol_field$Type, levels = c("Humanities", "Soc. Sciences", "STEM"))
+
+stats_pol_reach_by_cred <- bind_rows(
+  mutate(stats_pol_type_H_reach_H_cred, Type = "High R-High C"),
+  mutate(stats_pol_type_H_reach_L_cred, Type = "High R-Low C"),
+  mutate(stats_pol_type_L_reach_H_cred, Type = "Low R-High C"),
+  mutate(stats_pol_type_L_reach_L_cred, Type = "Low R-Low C")
+)
+stats_pol_reach_by_cred$Type <- factor(stats_pol_reach_by_cred$Type, levels = c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C"))
+
+stats_pol_gender <- bind_rows(
+  mutate(stats_pol_is_female, Type = "Female"),
+  mutate(stats_pol_is_male, Type = "Male")
+)
+stats_pol_gender$Type <- factor(stats_pol_gender$Type, levels = c("Female", "Male"))
+
+stats_pol_rank <- bind_rows(
+  stats_pol_ranking_1_100,
+  stats_pol_ranking_101_500,
+  stats_pol_ranking_501_1500,
+  stats_pol_ranking_1501
+)
+stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
+
+stats_pol_US <- bind_rows(
+  mutate(stats_pol_is_US, Type = "US"),
+  mutate(stats_pol_isnt_US, Type = "Non-US")
+)
+stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
+
+stats_pol_main$Type <- "Main"
+stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
+
+stats_pol_us_users$Type <- "US users"
+stats_pol_us_users$Type <- factor(stats_pol_us_users$Type, levels = "US users")
+
+stats_pol_main$Label <- factor(stats_pol_main$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_field$Label <- factor(stats_pol_field$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_reach_by_cred$Label <- factor(stats_pol_reach_by_cred$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_US$Label <- factor(stats_pol_US$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
+
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_cred, stats_pol_gender, stats_pol_rank, stats_pol_US, stats_pol_us_users)
+
+# Extract the US users values for each Term
+us_users_values <- stats_pol_comb %>%
+  filter(Type == "US users") %>%
+  select(Term, Mean, StdError, CI_lower, CI_upper) %>%
+  rename(US_users_Mean = Mean, US_users_StdError = StdError, US_users_CI_lower = CI_lower, US_users_CI_upper = CI_upper)
+
+# Join the US users values with the original dataframe
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(us_users_values, by = "Term") %>%
+  mutate(
+    Mean = Mean / US_users_Mean,
+    StdError = StdError / US_users_StdError,
+    CI_lower = CI_lower / US_users_CI_lower,
+    CI_upper = CI_upper / US_users_CI_upper
+  ) %>%
+  select(Term, Type, Label, Mean, StdError, CI_lower, CI_upper)
+
+stats_pol_comb %<>% filter(Type!="US users")
+
+stats_pol_comb$Group <- with(stats_pol_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
+  Type %in% c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C") ~ "Reach (R) by Credibility (C)",
+  Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
+  Type %in% c("US", "Non-US") ~ "Country",
+  Type %in% c("US users") ~ "US General Twitter Users"
+))
+stats_pol_comb$Group <- factor(
+  stats_pol_comb$Group,
+  levels = c(
+    "Main", 
+    "Gender",
+    "Fields",
+    "Reach (R) by Credibility (C)",
+    "University Rankings",
+    "Country",
+    "US General Twitter Users"
+  )
+)
+
+# Ensure 'Type' has a proper order that reflects groupings
+stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
+  "Main", "Female", "Male",
+  "STEM", "Soc. Sciences", "Humanities",
+  "High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C",
+  "1501+", "501-1500","101-500", "1-100",  
+  "Non-US", "US",
+  "US users"
+))
+# Color palette setup
+color_values <- c(
+  "Main" = "black",
+  "Female" = "#E41A1C", "Male" = "#377EB8",
+  "STEM" = "#4DAF4A", "Soc. Sciences" = "#FF7F00", "Humanities" = "#984EA3",
+  "High R-High C" = "#A65628", "High R-Low C" = "#F781BF",
+  "Low R-High C" = "#999999", "Low R-Low C" = "gold2",
+  "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
+  "US" = "red3", "Non-US" = "grey40",
+  "US users"="purple3"
+)
+
+# Also map 'Label' correctly to factor
+stats_pol_comb$Label <- factor(stats_pol_comb$Label, levels = unique(stats_pol_comb$Label))
+  
+stats_pol_comb$Label <- factor(
+  stats_pol_comb$Label,
+  levels = c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+)
+
+# Calculate the 'Main' mean for each Label (facet column)
+main_means <- stats_pol_comb %>%
+  filter(Type == "Main") %>%
+  group_by(Label) %>%
+  summarize(Main_Mean = mean(Mean, na.rm = TRUE))
+
+# Merge this back to the main dataset for plotting
+stats_pol_comb <- stats_pol_comb %>%
+  left_join(main_means, by = "Label")
+
+
+# Adjusted Figure 4 plot
+p_all_fig4 <- ggplot(stats_pol_comb %>% filter(Term %in% beh_var), aes(x = Mean, y = Type, color = Type, group = Type)) +
+  # Conditional vertical lines based on Label
+  geom_vline(data = stats_pol_comb %>% distinct(Label) %>% 
+               mutate(xintercept = ifelse(Label == "Emotionality/Reasoning", 1, 0)),
+             aes(xintercept = xintercept), linetype = "dotted", color = "grey99", size = 0.1, alpha = 0) +
+  geom_vline(data = main_means, aes(xintercept = Main_Mean), linetype = "dotted", color = "grey60", size = 0.5) +
+  geom_point(size = 2) +
+  geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper), height = 0.2, size = 0.5) +
+  scale_color_manual(values = color_values) +
+  labs(x = "Mean Value", y = NULL) +
+  theme_classic(base_size = 7) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text.x = element_text(size = 7, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.spacing = unit(0.5, "lines")
+  ) +
+  facet_grid(rows = vars(Group), cols = vars(Label), scales = "free", space = "free_y", switch = "y")
+
+# Save as EPS and PDF
+ggsave("edf4.eps", p_all_fig4, width = 180 / 25.4, height = 180 / 25.4, device = cairo_ps)
+ggsave("edf4.pdf", p_all_fig4, width = 180 / 25.4, height = 180 / 25.4, device = cairo_pdf)
+
+```
+
+
+# Reporting Statistical Evidence 
+
+## Calculate the mean, standard deviation (SD), and 95% confidence intervals (CIs) for stance_cultural_liberalism and stance_econ_collectivism
+```{r}
+# Function to calculate mean, sd, and 95% CI
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Variables of interest
+variables <- c("stance_climate_action", "pro_techno_prop", "pro_beh_prop")
+
+# Calculate statistics for academics
+cat("Academics:\n")
+for (variable in variables) {
+  stats <- calculate_stats_base_r(repl_df, variable)
+  print(paste("Mean for", variable, ": ", stats$mean))
+  print(paste("SD for", variable, ": ", stats$sd))
+  print(paste("95% CI for", variable, ": (", stats$ci_lower, ", ", stats$ci_upper, ")"))
+}
+
+
+```
+
+
+## Gender Differences in Climate Action, Techno-Optimism and Behavioral Adjustment
+```{r}
+# Function to calculate normality statistics
+check_normality <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  skewness_val <- moments::skewness(var_data)
+  kurtosis_val <- moments::kurtosis(var_data)
+  
+  list(
+    skewness = skewness_val,
+    kurtosis = kurtosis_val
+  )
+}
+
+# Function to calculate variance homogeneity (Levene's Test)
+check_variance_homogeneity <- function(data, variable, group_var) {
+  combined_data <- data.frame(
+    value = data[[variable]],
+    group = factor(data[[group_var]])
+  )
+  
+  levene_test <- car::leveneTest(value ~ group, data = combined_data)
+  
+  list(
+    f_stat = levene_test$"F value"[1],
+    df1 = levene_test$Df[1],
+    df2 = levene_test$Df[2],
+    p_value = levene_test$"Pr(>F)"[1]
+  )
+}
+
+# Function for enhanced reporting
+analyze_gender_differences <- function(data, variable, group_var) {
+  # Normality checks
+  normality_male <- check_normality(data %>% filter(!!sym(group_var) == 1), variable)
+  normality_female <- check_normality(data %>% filter(!!sym(group_var) == 0), variable)
+  
+  # Variance homogeneity
+  variance_check <- check_variance_homogeneity(data, variable, group_var)
+  
+  # Perform t-test
+  t_test <- t.test(as.formula(paste(variable, "~", group_var)), data = data, var.equal = FALSE)
+  
+  # Calculate Cohen's d
+  effect_size <- cohen.d(as.formula(paste(variable, "~", group_var)), data = data)
+  
+  # Group sample sizes
+  n_male <- sum(data[[group_var]] == 1, na.rm = TRUE)
+  n_female <- sum(data[[group_var]] == 0, na.rm = TRUE)
+  
+  # Return results
+  list(
+    normality_male = normality_male,
+    normality_female = normality_female,
+    variance_homogeneity = variance_check,
+    t_test = list(
+      t_stat = t_test$statistic,
+      df = t_test$parameter,
+      p_value = t_test$p.value,
+      mean_diff = diff(t_test$estimate)
+    ),
+    cohen_d = effect_size$estimate,
+    sample_sizes = list(male = n_male, female = n_female)
+  )
+}
+
+# Variables to analyze
+variables <- c("stance_climate_action", "pro_techno_prop", "pro_beh_prop")
+
+# Analyze gender differences for each variable
+for (variable in variables) {
+  cat("=== Variable:", variable, "===\n")
+  results <- analyze_gender_differences(repl_df, variable, "is_male")
+  
+  cat("Normality (Male): Skewness =", results$normality_male$skewness,
+      ", Kurtosis =", results$normality_male$kurtosis, "\n")
+  cat("Normality (Female): Skewness =", results$normality_female$skewness,
+      ", Kurtosis =", results$normality_female$kurtosis, "\n")
+  cat("Variance Homogeneity (Levene's Test): F(",
+      results$variance_homogeneity$df1, ", ", results$variance_homogeneity$df2, ") = ",
+      results$variance_homogeneity$f_stat, ", p =", results$variance_homogeneity$p_value, "\n")
+  cat("T-test Results: t(", results$t_test$df, ") = ", results$t_test$t_stat,
+      ", p =", results$t_test$p_value, ", Mean Difference = ", results$t_test$mean_diff, "\n")
+  cat("Cohen's d:", results$cohen_d, "\n")
+  cat("Sample Sizes: Male =", results$sample_sizes$male, ", Female =", results$sample_sizes$female, "\n\n")
+}
+
+```
+
+## Field differences
+```{r}
+# 1) Construct a single factor variable field_group
+df_fields <- repl_df %>%
+  mutate(
+    field_group = case_when(
+      is_stem == 1 ~ "STEM",
+      is_soc_sci == 1 ~ "Social Sciences",
+      is_humanities == 1 ~ "Humanities",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(field_group))  # Exclude 'Other' or NA
+
+# 2) Utility functions for normality, variance, t-test, etc.
+
+# (a) Check normality: returns skewness and kurtosis
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (b) Levene's test for variance homogeneity, requires factor grouping
+check_variance_homogeneity <- function(data, outcome, groupvar) {
+  data_ok <- data %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  # Convert group to factor if not already
+  data_ok[[groupvar]] <- factor(data_ok[[groupvar]], exclude = NULL)
+  
+  # Perform Levene's test
+  levene_out <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = data_ok)
+  
+  list(
+    f_value = levene_out$`F value`[1],
+    df1 = levene_out$Df[1],
+    df2 = levene_out$Df[2],
+    p_value = levene_out$`Pr(>F)`[1]
+  )
+}
+
+# (c) Compare two groups using Welch's t-test and Cohen's d
+compare_two_groups <- function(data, outcome, groupvar, group1, group2) {
+  # Subset data to just the two groups
+  subdata <- data %>%
+    filter(.data[[groupvar]] %in% c(group1, group2))
+  
+  # Normality
+  normality_g1 <- check_normality(subdata[subdata[[groupvar]] == group1, outcome])
+  normality_g2 <- check_normality(subdata[subdata[[groupvar]] == group2, outcome])
+  
+  # Levene’s test
+  levene_res <- check_variance_homogeneity(subdata, outcome, groupvar)
+  
+  # Welch’s t-test (var.equal=FALSE is default)
+  t_out <- t.test(
+    as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = subdata,
+    var.equal = FALSE
+  )
+  
+  # Cohen’s d
+  d_out <- cohen.d(
+    as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = subdata
+  )$estimate
+  
+  # Sample sizes
+  n1 <- sum(subdata[[groupvar]] == group1)
+  n2 <- sum(subdata[[groupvar]] == group2)
+  
+  # Collect results
+  list(
+    group1 = group1,
+    group2 = group2,
+    normality = list(
+      group1 = normality_g1,
+      group2 = normality_g2
+    ),
+    levene = levene_res,
+    t_test = t_out,
+    cohen_d = d_out,
+    sample_sizes = c(group1 = n1, group2 = n2)
+  )
+}
+
+# 3) Run pairwise comparisons among the 3 valid field_group levels
+field_levels <- c("STEM", "Social Sciences", "Humanities")
+pairs_list <- list(
+  c("STEM", "Social Sciences"),
+  c("STEM", "Humanities"),
+  c("Social Sciences", "Humanities")
+)
+
+# 4) Choose variables to compare, e.g. stance_climate_action, pro_techno_prop, etc.
+variables_to_compare <- c("stance_climate_action", "pro_techno_prop")
+
+for (varname in variables_to_compare) {
+  cat("=== Variable:", varname, "===\n\n")
+  
+  for (pair in pairs_list) {
+    group1 <- pair[1]
+    group2 <- pair[2]
+    
+    cat("--- Comparing", group1, "vs.", group2, "---\n")
+    res <- compare_two_groups(
+      data = df_fields,
+      outcome = varname,
+      groupvar = "field_group",
+      group1 = group1,
+      group2 = group2
+    )
+    
+    # Print results
+    # Normality
+    cat(group1, "Normality: Skewness =", round(res$normality$group1$skewness, 3),
+        ", Kurtosis =", round(res$normality$group1$kurtosis, 3), "\n")
+    cat(group2, "Normality: Skewness =", round(res$normality$group2$skewness, 3),
+        ", Kurtosis =", round(res$normality$group2$kurtosis, 3), "\n")
+    
+    # Levene's test
+    cat("Levene's Test: F(", res$levene$df1, ",", res$levene$df2, ") =",
+        round(res$levene$f_value, 2), ", p =", formatC(res$levene$p_value, format = "f", digits = 4), "\n")
+    
+    # Welch t-test
+    t_st <- res$t_test$statistic
+    t_df <- res$t_test$parameter
+    t_pv <- res$t_test$p.value
+    t_md <- res$t_test$estimate[1] - res$t_test$estimate[2]
+    
+    cat("T-test Results: t(", round(t_df, 1), ") =", round(t_st, 3),
+        ", p =", formatC(t_pv, format = "f", digits = 4),
+        ", Mean Difference =", round(t_md, 4), "\n")
+    
+    cat("Cohen's d:", round(res$cohen_d, 3), "\n")
+    cat("Sample Sizes:", group1, "=", res$sample_sizes[1],
+        ",", group2, "=", res$sample_sizes[2], "\n\n")
+  }
+}
+
+```
+
+## High vs Low Reach with Expertise
+```{r}
+# 1. Define helper functions
+calc_descriptives <- function(x) {
+  x <- x[!is.na(x)]
+  n_val <- length(x)
+  mean_val <- mean(x)
+  sd_val <- sd(x)
+  se_val <- sd_val / sqrt(n_val)
+  crit_val <- qt(0.975, df = n_val - 1)
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  list(n = n_val, mean = mean_val, sd = sd_val, ci_lower = ci_lower, ci_upper = ci_upper)
+}
+
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(skewness = skewness(x), kurtosis = kurtosis(x))
+}
+
+check_variance_homogeneity <- function(x, g) {
+  data_tmp <- data.frame(value = x, group = as.factor(g))
+  data_tmp <- data_tmp[!is.na(data_tmp$value) & !is.na(data_tmp$group), ]  # Exclude missing values
+  lev_out <- leveneTest(value ~ group, data = data_tmp)
+  list(f_value = lev_out$`F value`[1], df1 = lev_out$Df[1], df2 = lev_out$Df[2], p_value = lev_out$`Pr(>F)`[1])
+}
+
+compare_groups <- function(data, outcome, group_var, group_val, ref_val) {
+  # Filter for two groups
+  subdata <- data %>%
+    filter(!is.na(.data[[outcome]]) & !is.na(.data[[group_var]]) & 
+             (.data[[group_var]] %in% c(group_val, ref_val)))
+  
+  group1 <- subdata[subdata[[group_var]] == group_val, outcome, drop = TRUE]
+  group2 <- subdata[subdata[[group_var]] == ref_val, outcome, drop = TRUE]
+  
+  # Descriptive statistics
+  desc1 <- calc_descriptives(group1)
+  desc2 <- calc_descriptives(group2)
+  
+  # Normality
+  norm1 <- check_normality(group1)
+  norm2 <- check_normality(group2)
+  
+  # Levene’s test
+  levene_out <- check_variance_homogeneity(c(group1, group2), c(rep("Group1", length(group1)), rep("Group2", length(group2))))
+  
+  # Welch’s t-test (default var.equal=FALSE)
+  t_out <- t.test(group1, group2, var.equal = FALSE)
+  
+  # Cohen’s d
+  d_out <- cohen.d(group1, group2, pooled = FALSE)$estimate
+  
+  list(
+    group1_stats = desc1,
+    group2_stats = desc2,
+    normality = list(group1 = norm1, group2 = norm2),
+    levene = levene_out,
+    t_test = t_out,
+    cohen_d = d_out
+  )
+}
+
+# 2. Define groups and variables
+variables <- c("stance_climate_action")
+comparisons <- list(
+  list(group = "type_H_reach_H_exp_climate", val = 1, ref = 0, label = "High-reach, high-credibility experts"),
+  list(group = "type_H_reach_L_exp_climate", val = 1, ref = 0, label = "High-reach, low-credibility academics"),
+  list(group = "type_L_reach_H_exp_climate", val = 1, ref = 0, label = "Low-reach, high-credibility experts")
+)
+
+# 3. Compare groups
+for (varname in variables) {
+  for (comp in comparisons) {
+    res <- compare_groups(
+      data = repl_df,
+      outcome = varname,
+      group_var = comp$group,
+      group_val = comp$val,
+      ref_val = comp$ref
+    )
+    
+    cat("=== Comparing:", comp$label, "===\n")
+    cat("Group 1: N =", res$group1_stats$n, "Mean =", round(res$group1_stats$mean, 4),
+        "SD =", round(res$group1_stats$sd, 4), "95% CI = [", round(res$group1_stats$ci_lower, 4),
+        ",", round(res$group1_stats$ci_upper, 4), "]\n")
+    cat("Group 2: N =", res$group2_stats$n, "Mean =", round(res$group2_stats$mean, 4),
+        "SD =", round(res$group2_stats$sd, 4), "95% CI = [", round(res$group2_stats$ci_lower, 4),
+        ",", round(res$group2_stats$ci_upper, 4), "]\n")
+    
+    cat("Normality (Group 1): Skewness =", round(res$normality$group1$skewness, 3),
+        ", Kurtosis =", round(res$normality$group1$kurtosis, 3), "\n")
+    cat("Normality (Group 2): Skewness =", round(res$normality$group2$skewness, 3),
+        ", Kurtosis =", round(res$normality$group2$kurtosis, 3), "\n")
+    
+    cat("Levene’s Test: F(", res$levene$df1, ",", res$levene$df2, ") =", round(res$levene$f_value, 2),
+        ", p =", formatC(res$levene$p_value, format = "f", digits = 4), "\n")
+    
+    cat("Welch’s t-test: t(", round(res$t_test$parameter, 2), ") =", round(res$t_test$statistic, 3),
+        ", p =", formatC(res$t_test$p.value, format = "f", digits = 4), ", Mean Diff =", round(res$t_test$estimate[1] - res$t_test$estimate[2], 4), "\n")
+    cat("Cohen’s d:", round(res$cohen_d, 3), "\n\n")
+  }
+}
+
+```
+
+
+## Climate Action Stance: University Rankings;  US-based vs Non-US-based academics
+
+```{r}
+repl_df <- repl_df %>%
+  mutate(is_top100 = ifelse(ranking_cat == "1-100", 1, 0),
+         is_101_500 = ifelse(ranking_cat == "101-500", 1, 0),
+         is_501_1500 = ifelse(ranking_cat == "501-1500", 1, 0),
+         is_1501plus = ifelse(ranking_cat == "1501+", 1, 0))
+
+# Function for detailed comparison
+detailed_comparison <- function(data, outcome, groupvar, group1_label, group2_label) {
+  # Subset data
+  data_group1 <- data %>% filter(!!sym(groupvar) == 1)
+  data_group2 <- data %>% filter(!!sym(groupvar) == 0)
+  
+  # Descriptive statistics
+  n1 <- nrow(data_group1)
+  n2 <- nrow(data_group2)
+  mean1 <- mean(data_group1[[outcome]], na.rm = TRUE)
+  mean2 <- mean(data_group2[[outcome]], na.rm = TRUE)
+  sd1 <- sd(data_group1[[outcome]], na.rm = TRUE)
+  sd2 <- sd(data_group2[[outcome]], na.rm = TRUE)
+  ci1 <- t.test(data_group1[[outcome]])$conf.int
+  ci2 <- t.test(data_group2[[outcome]])$conf.int
+  
+  # Normality checks
+  skewness1 <- skewness(data_group1[[outcome]], na.rm = TRUE)
+  kurtosis1 <- kurtosis(data_group1[[outcome]], na.rm = TRUE)
+  skewness2 <- skewness(data_group2[[outcome]], na.rm = TRUE)
+  kurtosis2 <- kurtosis(data_group2[[outcome]], na.rm = TRUE)
+  
+  # Levene’s test for variance homogeneity
+  combined_data <- data.frame(
+    value = c(data_group1[[outcome]], data_group2[[outcome]]),
+    group = c(rep(group1_label, n1), rep(group2_label, n2))
+  )
+  levene_result <- leveneTest(value ~ group, data = combined_data)
+  
+  # Welch’s t-test
+  ttest_result <- t.test(
+    data_group1[[outcome]],
+    data_group2[[outcome]],
+    var.equal = FALSE
+  )
+  
+  # Cohen’s d
+  cohen_d_result <- cohen.d(
+    data_group1[[outcome]], 
+    data_group2[[outcome]]
+  )
+  
+  # Print results
+  cat("=== Comparison:", group1_label, "vs.", group2_label, "===\n")
+  cat("Group 1 (", group1_label, "): N =", n1, 
+      ", Mean =", round(mean1, 4), 
+      ", SD =", round(sd1, 4), 
+      ", 95% CI =", sprintf("[%.4f, %.4f]", ci1[1], ci1[2]), "\n")
+  cat("Skewness =", round(skewness1, 3), ", Kurtosis =", round(kurtosis1, 3), "\n")
+  
+  cat("Group 2 (", group2_label, "): N =", n2, 
+      ", Mean =", round(mean2, 4), 
+      ", SD =", round(sd2, 4), 
+      ", 95% CI =", sprintf("[%.4f, %.4f]", ci2[1], ci2[2]), "\n")
+  cat("Skewness =", round(skewness2, 3), ", Kurtosis =", round(kurtosis2, 3), "\n")
+  
+  cat("Levene’s Test: F(", levene_result$Df[1], ",", levene_result$Df[2], 
+      ") =", round(levene_result$`F value`[1], 2), 
+      ", p =", formatC(levene_result$`Pr(>F)`[1], format = "f", digits = 4), "\n")
+  
+  cat("Welch’s t-test: t(", round(ttest_result$parameter, 2), 
+      ") =", round(ttest_result$statistic, 3), 
+      ", p =", formatC(ttest_result$p.value, format = "f", digits = 4), 
+      ", Mean Diff =", round(ttest_result$estimate[1] - ttest_result$estimate[2], 4), "\n")
+  
+  cat("Cohen’s d:", round(cohen_d_result$estimate, 3), "\n\n")
+}
+
+# Climate Action: US vs Non-US
+detailed_comparison(repl_df, "stance_climate_action", "is_US", "U.S.-based", "Non-U.S.-based")
+
+# Behavioral Adjustments: US vs Non-US
+detailed_comparison(repl_df, "pro_beh_prop", "is_US", "U.S.-based", "Non-U.S.-based")
+
+# University Rankings: 1-100 vs 101-500
+detailed_comparison(repl_df, "stance_climate_action", "is_top100", "Top 100 Universities", "101-500 Universities")
+
+# University Rankings: 1-100 vs 501-1500
+detailed_comparison(repl_df, "stance_climate_action", "is_501_1500", "Top 100 Universities", "501-1500 Universities")
+
+# University Rankings: 1-100 vs 1501+
+detailed_comparison(repl_df, "stance_climate_action", "is_1501plus", "Top 100 Universities", "1501+ Universities")
+
+```
+
+
+## Behavioral Adjustments Stance: High vs Low Reach with Expertise
+```{r}
+t.test(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df)
+cohen.d(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df)
+
+t.test(pro_beh_prop ~ type_H_reach_L_exp_climate, data = repl_df)
+cohen.d(pro_beh_prop ~ type_H_reach_L_exp_climate, data = repl_df)
+
+t.test(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df)
+cohen.d(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df)
+
+t.test(pro_beh_prop ~ type_L_reach_L_exp_climate, data = repl_df)
+cohen.d(pro_beh_prop ~ type_L_reach_L_exp_climate, data = repl_df)
+
+```
+
+## Social Media Reach vs Expertise
+```{r}
+# High-reach non-experts (low expertise) vs high-reach experts on climate action stance
+t.test(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+# Low-reach subject matter experts vs high-reach non-experts on climate action stance
+t.test(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+
+```
+
+## Calculate the mean, standard deviation (SD), and 95% confidence intervals (CIs) for stance_cultural_liberalism and stance_econ_collectivism
+```{r}
+# Function to calculate mean, sd, and 95% CI using base R
+calculate_stats_base_r <- function(data, variable) {
+  # Remove NA values
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  # Calculate mean and standard deviation
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  # Return values as a named list
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Assuming your dataframe is called repl_df
+
+# Calculate stats for stance_cultural_liberalism
+cultural_liberalism_stats <- calculate_stats_base_r(repl_df, "stance_cultural_liberalism")
+print(paste("Mean for Cultural Liberalism: ", cultural_liberalism_stats$mean))
+print(paste("SD for Cultural Liberalism: ", cultural_liberalism_stats$sd))
+print(paste("95% CI for Cultural Liberalism: (", cultural_liberalism_stats$ci_lower, ", ", cultural_liberalism_stats$ci_upper, ")"))
+
+# Calculate stats for stance_econ_collectivism
+econ_collectivism_stats <- calculate_stats_base_r(repl_df, "stance_econ_collectivism")
+print(paste("Mean for Economic Collectivism: ", econ_collectivism_stats$mean))
+print(paste("SD for Economic Collectivism: ", econ_collectivism_stats$sd))
+print(paste("95% CI for Economic Collectivism: (", econ_collectivism_stats$ci_lower, ", ", econ_collectivism_stats$ci_upper, ")"))
+
+
+```
+
+Statistical tests for subgroup comparisons
+```{r}
+################################################################################
+## HELPER FUNCTIONS
+################################################################################
+
+# (A) Normality check: returns skewness & kurtosis for a numeric vector
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's test for variance homogeneity
+#     groupvar is a factor or will be coerced to factor
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  # `leveneTest` from the 'car' package
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Compare exactly two groups (binary factor) using Welch’s t-test & Cohen's d
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  # Filter out NAs
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]),
+           !is.na(.data[[groupvar]])) %>%
+    # keep only the two group levels of interest
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  # Convert groupvar to factor
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  # Normality checks
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop=TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop=TRUE]
+  
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE  # Welch's by default
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE  # by default, 'cohen.d' with factor does Hedge's correction
+  )
+  
+  # Calculate sample sizes, means, CIs for each group
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1   <- sd(x_group1, na.rm = TRUE)
+  sd_g2   <- sd(x_group2, na.rm = TRUE)
+  
+  # 95% CI for means
+  # We do a simple approximate approach
+  sem_g1 <- sd_g1 / sqrt(n_g1)
+  sem_g2 <- sd_g2 / sqrt(n_g2)
+  
+  ci95_width_g1 <- qt(0.975, df=n_g1-1) * sem_g1
+  ci95_width_g2 <- qt(0.975, df=n_g2-1) * sem_g2
+  
+  # Return a structured list
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    
+    sample_sizes = c(
+      group1 = n_g1,
+      group2 = n_g2
+    ),
+    
+    normality = list(
+      group1 = normality_g1,
+      group2 = normality_g2
+    ),
+    
+    variance_test = levene_res,
+    
+    # T-test results
+    welch_t = list(
+      statistic = t_res$statistic,
+      df = t_res$parameter,
+      p_value = t_res$p.value,
+      mean_diff = (mean_g1 - mean_g2)
+    ),
+    
+    # effect size
+    cohen_d = d_res$estimate,  # or d_res$conf.int for CI
+    
+    # group descriptive stats
+    group1_stats = list(
+      mean = mean_g1,
+      sd   = sd_g1,
+      ci_lower = mean_g1 - ci95_width_g1,
+      ci_upper = mean_g1 + ci95_width_g1
+    ),
+    group2_stats = list(
+      mean = mean_g2,
+      sd   = sd_g2,
+      ci_lower = mean_g2 - ci95_width_g2,
+      ci_upper = mean_g2 + ci95_width_g2
+    )
+  )
+}
+
+################################################################################
+## High-Reach Experts vs Non-Experts for Cultural/Econ stances
+################################################################################
+
+# Example: High-reach, non-expert vs. High-reach, expert on Cultural Liberalism
+res_cult_nonexpert_vs_expert <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "type_H_reach_H_exp_cult",   # a 0/1 variable
+  label_group1 = 0,  # e.g. "non-expert"
+  label_group2 = 1   # e.g. "expert"
+)
+print(res_cult_nonexpert_vs_expert)
+
+# Example: High-reach, non-expert vs. High-reach, expert on Economic Collectivism
+res_econ_nonexpert_vs_expert <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "type_H_reach_H_exp_econ",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_econ_nonexpert_vs_expert)
+
+################################################################################
+## Gender differences on Cultural/Econ stances
+################################################################################
+
+# Suppose is_male is 0/1
+res_cult_male_vs_female <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_male",
+  label_group1 = 0,  # female
+  label_group2 = 1   # male
+)
+print(res_cult_male_vs_female)
+
+res_econ_male_vs_female <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_male",
+  label_group1 = 0,
+  label_group2 = 1
+)
+print(res_econ_male_vs_female)
+
+################################################################################
+## Field differences (Social Sci, Humanities, STEM) 
+##    for Cultural/Econ stances
+################################################################################
+
+res_soc_sci_vs_others_cult <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_soc_sci",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_soc_sci_vs_others_cult)
+
+
+res_stem_vs_others_cult <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_stem",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_stem_vs_others_cult)
+
+
+res_humanities_vs_others_cult <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_humanities",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_humanities_vs_others_cult)
+
+
+res_soc_sci_vs_others_econ <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_soc_sci",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_soc_sci_vs_others_econ)
+
+
+res_stem_vs_others_econ <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_stem",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_stem_vs_others_econ)
+
+
+res_humanities_vs_others_econ <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_humanities",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_humanities_vs_others_econ)
+
+################################################################################
+##  University rankings and Cultural/Econ stances
+################################################################################
+
+res_top100_vs_101_500_cult <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100","101-500")),
+  outcome = "stance_cultural_liberalism",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "101-500"
+)
+print(res_top100_vs_101_500_cult)
+
+
+res_top100_vs_101_500_econ <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100","101-500")),
+  outcome = "stance_econ_collectivism",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "101-500"
+)
+print(res_top100_vs_101_500_econ)
+
+################################################################################
+## U.S.-based vs Non-U.S. on Cultural/Econ stances
+################################################################################
+
+res_US_vs_nonUS_cult <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_US",
+  label_group1 = 0,   # Non-US
+  label_group2 = 1    # US
+)
+print(res_US_vs_nonUS_cult)
+
+res_US_vs_nonUS_econ <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_US",
+  label_group1 = 0,
+  label_group2 = 1
+)
+print(res_US_vs_nonUS_econ)
+
+```
+
+## Egocentrism
+```{r}
+################################################################################
+## Statistical Comparisons for Egocentrism
+################################################################################
+
+# (A) Normality check: returns skewness & kurtosis for a numeric vector
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's test for variance homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  # Levene's test using `leveneTest` from the 'car' package
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Compare two groups using Welch’s t-test and Cohen's d
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+################################################################################
+## High Reach vs Low Credibility for Egocentrism
+################################################################################
+
+res_high_reach_low_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "type_H_reach_L_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # High reach, low credibility
+)
+print(res_high_reach_low_cred)
+
+res_low_reach_high_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "type_L_reach_H_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # Low reach, high credibility
+)
+print(res_low_reach_high_cred)
+
+################################################################################
+## Field Differences for Egocentrism
+################################################################################
+
+res_humanities_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "is_humanities",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_humanities_vs_others)
+
+res_social_sciences_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "is_soc_sci",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_social_sciences_vs_others)
+
+################################################################################
+## University Rankings for Egocentrism
+################################################################################
+
+res_top100_vs_101_500 <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "101-500")),
+  outcome = "egocentrism",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "101-500"
+)
+print(res_top100_vs_101_500)
+
+res_top100_vs_501_1500 <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "501-1500")),
+  outcome = "egocentrism",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "501-1500"
+)
+print(res_top100_vs_501_1500)
+
+################################################################################
+## U.S.-based vs Non-U.S.-based for Egocentrism
+################################################################################
+
+res_US_vs_nonUS <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_US_vs_nonUS)
+
+```
+
+Calculate the mean, standard deviation (SD), and 95% confidence intervals (CIs) for Egocentrism
+```{r}
+# Function to calculate mean, sd, and 95% CI using base R
+calculate_stats_base_r <- function(data, variable) {
+  # Remove NA values
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  # Calculate mean and standard deviation
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  # Return values as a named list
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Calculate stats for egocentrism
+egocentrism_stats <- calculate_stats_base_r(repl_df, "egocentrism")
+print(paste("Mean for Egocentrism: ", egocentrism_stats$mean))
+print(paste("SD for Egocentrism: ", egocentrism_stats$sd))
+print(paste("95% CI for Egocentrism: (", egocentrism_stats$ci_lower, ", ", egocentrism_stats$ci_upper, ")"))
+```
+
+## Toxicity 
+```{r}
+################################################################################
+## Statistical Comparisons for Toxicity
+################################################################################
+
+# (A) Normality check: returns skewness & kurtosis for a numeric vector
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's test for variance homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  # Levene's test using `leveneTest` from the 'car' package
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Compare two groups using Welch’s t-test and Cohen's d
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+################################################################################
+## Field Differences for Toxicity
+################################################################################
+
+res_humanities_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "is_humanities",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_humanities_vs_others)
+
+res_social_sciences_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "is_soc_sci",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_social_sciences_vs_others)
+
+res_stem_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "is_stem",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_stem_vs_others)
+
+################################################################################
+## Reach and Credibility Differences for Toxicity
+################################################################################
+
+res_high_reach_low_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "type_H_reach_L_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # High reach, low credibility
+)
+print(res_high_reach_low_cred)
+
+res_low_reach_high_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "type_L_reach_H_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # Low reach, high credibility
+)
+print(res_low_reach_high_cred)
+
+################################################################################
+## University Rankings for Toxicity
+################################################################################
+
+res_top100_vs_101_500 <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "101-500")),
+  outcome = "toxicity",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "101-500"
+)
+print(res_top100_vs_101_500)
+
+res_top100_vs_501_1500 <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "501-1500")),
+  outcome = "toxicity",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "501-1500"
+)
+print(res_top100_vs_501_1500)
+
+################################################################################
+## U.S.-based vs Non-U.S.-based for Toxicity
+################################################################################
+
+res_US_vs_nonUS <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_US_vs_nonUS)
+
+```
+
+Calculate Mean, SD, and 95% Confidence Intervals for Toxicity
+```{r}
+# Function to calculate mean, sd, and 95% CI using base R
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  # Calculate mean and standard deviation
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  # Return values as a named list
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Calculate stats for toxicity
+toxicity_stats <- calculate_stats_base_r(repl_df, "toxicity")
+print(paste("Mean for Toxicity: ", toxicity_stats$mean))
+print(paste("SD for Toxicity: ", toxicity_stats$sd))
+print(paste("95% CI for Toxicity: (", toxicity_stats$ci_lower, ", ", toxicity_stats$ci_upper, ")"))
+
+```
+
+## Emotionality
+
+```{r}
+################################################################################
+## Statistical Comparisons for Emotionality-Reasoning
+################################################################################
+
+# (A) Normality check: returns skewness & kurtosis for a numeric vector
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's test for variance homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  # Levene's test using `leveneTest` from the 'car' package
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Compare two groups using Welch’s t-test and Cohen's d
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+
+################################################################################
+## Gender differences 
+################################################################################
+
+# Suppose is_male is 0/1
+res_emotionality_male_vs_female <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "is_male",
+  label_group1 = 0,  # female
+  label_group2 = 1   # male
+)
+print(res_emotionality_male_vs_female)
+
+
+################################################################################
+## Field Differences for Emotionality-Reasoning
+################################################################################
+
+res_humanities_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "is_humanities",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_humanities_vs_others)
+
+res_social_sciences_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "is_soc_sci",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_social_sciences_vs_others)
+
+res_stem_vs_others <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "is_stem",
+  label_group1 = 0, 
+  label_group2 = 1
+)
+print(res_stem_vs_others)
+
+################################################################################
+## Reach and Credibility Differences for Emotionality-Reasoning
+################################################################################
+
+res_high_reach_low_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "type_H_reach_L_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # High reach, low credibility
+)
+print(res_high_reach_low_cred)
+
+res_low_reach_high_cred <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "type_L_reach_H_cred",
+  label_group1 = 0,  # Others
+  label_group2 = 1   # Low reach, high credibility
+)
+print(res_low_reach_high_cred)
+
+################################################################################
+## U.S.-based vs Non-U.S.-based for Emotionality-Reasoning
+################################################################################
+
+res_US_vs_nonUS <- compare_two_groups(
+  df = repl_df,
+  outcome = "emotionality",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_US_vs_nonUS)
+
+```
+
+Calculate Mean, SD, and 95% Confidence Intervals for emotionality
+```{r}
+# Function to calculate mean, sd, and 95% CI for emotionality
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Calculate stats for emotionality
+emotionality_stats <- calculate_stats_base_r(repl_df, "emotionality")
+print(paste("Mean for Emotionality: ", emotionality_stats$mean))
+print(paste("SD for Emotionality: ", emotionality_stats$sd))
+print(paste("95% CI for Emotionality: (", emotionality_stats$ci_lower, ", ", emotionality_stats$ci_upper, ")"))
+```
+
+
+
+
+

@@ -1,0 +1,686 @@
+---
+title: "4_tab_1_to_3"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+# Goal: create Tables 1 to 3.
+
+----------------------------------------------------------------------
+
+# Layperson Explanation:
+
+Load Data: The script starts by loading datasets from CSV files into dataframes.
+Map Labels for Variables: Maps variable names to their corresponding labels for easier interpretation.
+Convert Dataframe to Data Table: Converts dataframes to data tables for efficient data manipulation.
+Specify Columns to Average: Defines a list of columns to calculate mean values for.
+Aggregate Data by Author: Aggregates data by 'author_id' and calculates mean values for the specified columns.
+Generate Summary Statistics: Generates summary statistics (mean, median, SD, min, max, N) for the aggregated data and maps the variables to their labels.
+Display Summary Statistics: Displays the summary statistics.
+SQL Queries for Table 2: Executes SQL queries to summarize various aspects of the tweet data (e.g., number of characters, likes, retweets) and displays the results.
+Load Data for Text Analysis: Loads datasets for text analysis into dataframes.
+Generate Summary Statistics for Text Analysis: Generates summary statistics for various topics (e.g., climate action, abortion rights, racism) by filtering and counting occurrences in the data.
+
+-----------------------------------------------------------------------
+# Pseudocode:
+
+
+## Load Data
+LOAD dataset 'repl_df.csv' into dataframe 'repl_df'
+
+## Map Labels for Variables
+DEFINE 'label_map' as a mapping of variables to their respective labels
+
+## Convert dataframe to data table
+CONVERT 'repl_df' to data table using 'setDT()'
+
+## Specify Columns to Average
+DEFINE 'columns_to_average' as a list of columns to calculate means for
+
+## Aggregate Data by Author
+AGGREGATE 'repl_df' by 'author_id', calculating mean for each column in 'columns_to_average'
+STORE results in 'au_bal'
+
+## Generate Summary Statistics
+GENERATE summary statistics for 'au_bal' using 'describe' function from 'psych' package
+REMOVE unnecessary columns ('se', 'range', 'vars')
+ASSIGN row names as a new column 'Variable'
+ROUND numerical columns to 3 decimal places
+SELECT relevant columns ('Variable', 'Mean', 'Median', 'SD', 'Min', 'Max', 'N')
+MAP 'Variable' column to 'label_map'
+STORE results in 'summary_stats'
+
+## Display Summary Statistics
+DISPLAY 'summary_stats'
+
+## Load Data for Rest of Author Level Features
+LOAD dataset 'df_tab1.csv' into dataframe 'df_tab1'
+
+## Map Labels for Variables
+DEFINE 'label_map' for 'df_tab1' variables
+
+## Convert dataframe to data table
+CONVERT 'df_tab1' to data table using 'setDT()'
+
+## Specify Columns to Average
+DEFINE 'columns_to_average' as a list of columns to calculate means for
+
+## Aggregate Data by Author
+AGGREGATE 'df_tab1' by 'author_id', calculating mean for each column in 'columns_to_average'
+STORE results in 'au_bal'
+
+## Generate Summary Statistics
+GENERATE summary statistics for 'au_bal' using 'describe' function from 'psych' package
+REMOVE unnecessary columns ('se', 'range', 'vars')
+ASSIGN row names as a new column 'Variable'
+ROUND numerical columns to 3 decimal places
+SELECT relevant columns ('Variable', 'Mean', 'Median', 'SD', 'Min', 'Max', 'N')
+MAP 'Variable' column to 'label_map'
+STORE results in 'summary_stats'
+
+## Display Summary Statistics
+DISPLAY 'summary_stats'
+
+## SQL Queries for Table 2
+
+## Create a Balanced Data Set
+EXECUTE SQL query to create a balanced data set in BigQuery
+
+## Summarize Number of Characters
+EXECUTE SQL query to summarize the number of characters in tweets
+DISPLAY results of the query
+
+## Summarize Number of Likes
+EXECUTE SQL query to summarize the number of likes (favourites)
+DISPLAY results of the query
+
+## Summarize Intensive Margin of Retweets
+EXECUTE SQL query to summarize the intensive margin of retweets
+DISPLAY results of the query
+
+## Summarize Extensive Margin of Retweets
+EXECUTE SQL query to summarize the extensive margin of retweets
+DISPLAY results of the query
+
+## Summarize Extensive Margin of English Tweets
+EXECUTE SQL query to summarize the extensive margin of English tweets
+DISPLAY results of the query
+
+## Summarize Number of Words in Full Set of Tweets
+EXECUTE SQL query to summarize the number of words in full set of tweets
+DISPLAY results of the query
+
+## Summarize Number of Affective Words
+EXECUTE SQL query to summarize the number of affective words
+DISPLAY results of the query
+
+## Summarize Number of Cognition Words
+EXECUTE SQL query to summarize the number of cognition words
+DISPLAY results of the query
+
+## Summarize Number of Words in English Tweets
+EXECUTE SQL query to summarize the number of words in English tweets
+DISPLAY results of the query
+
+## Summarize Proportion of Affective Words
+EXECUTE SQL query to summarize the proportion of affective words
+DISPLAY results of the query
+
+## Summarize Proportion of Cognition Words
+EXECUTE SQL query to summarize the proportion of cognition words
+DISPLAY results of the query
+
+## Summarize Self-Focus Words
+EXECUTE SQL query to summarize the number of self-focus words
+DISPLAY results of the query
+
+## Summarize Share of Self-Focus Words
+EXECUTE SQL query to summarize the share of self-focus words
+DISPLAY results of the query
+
+## Summarize Toxicity
+EXECUTE SQL query to summarize the toxicity of tweets
+DISPLAY results of the query
+
+## Table 3
+
+## Load Data for Text Analysis
+LOAD datasets 'df_tab3_stance_main.csv', 'df_tab3_stance_clim_narratives.csv', and 'df_tab3_stance_tax.csv' into respective dataframes
+
+## Generate Summary Statistics
+
+## Climate Action
+FILTER 'stance_main' for 'climate_comb' and COUNT occurrences
+STORE results in 'stance_climate_comb_dist'
+DISPLAY count of rows in 'stance_climate_comb'
+
+## Abortion Rights
+FILTER 'stance_main' for 'abortion_rights' and COUNT occurrences
+STORE results in 'stance_abortion_rights_dist'
+DISPLAY 'stance_abortion_rights_dist'
+DISPLAY count of rows in 'stance_abortion_rights'
+
+## Racism or Race Relations
+FILTER 'stance_main' for 'racism_or_race_relations' and COUNT occurrences
+STORE results in 'stance_racism_or_race_relations_dist'
+DISPLAY 'stance_racism_or_race_relations_dist'
+DISPLAY count of rows in 'stance_racism_or_race_relations'
+
+## Welfare State
+FILTER 'stance_main' for 'welfare_state' and COUNT occurrences
+STORE results in 'stance_welfare_state_dist'
+DISPLAY 'stance_welfare_state_dist'
+DISPLAY count of rows in 'stance_welfare_state'
+
+## Redistribution of Income
+FILTER 'stance_main' for 'redistribution_of_income' and COUNT occurrences
+STORE results in 'stance_redistribution_of_income_dist'
+DISPLAY 'stance_redistribution_of_income_dist'
+DISPLAY count of rows in 'stance_redistribution_of_income'
+
+## Tax
+COUNT rows in 'stance_tax'
+SUM 'pro', 'anti', 'neutral' columns and calculate their proportions
+DISPLAY results
+
+## Climate Action Narratives
+FILTER 'stance_clim_narratives' and COUNT occurrences
+STORE results in 'climate_action_responses_comb_meta_bal_dist'
+DISPLAY count of rows in 'stance_clim_narratives'
+
+----------------------------------------------------------------------
+
+
+# Table 1
+
+## Expressions
+
+This uses the subset of academics for which we have labelled the stance and narratives
+```{r}
+repl_df <- read_csv( "../2_data/repl_df_table.csv")
+```
+
+```{r}
+any_stance_df <- repl_df %>%
+  group_by(author_id) %>%
+  summarise(
+    any_pro_stance = sum(stance_climate_action > 0 | stance_cultural_liberalism > 0 |
+                         stance_econ_collectivism > 0 ,
+                         na.rm = TRUE),
+    any_anti_stance = sum(stance_climate_action < 0 | stance_cultural_liberalism < 0 |
+                          stance_econ_collectivism < 0 ,
+                          na.rm = TRUE)
+  ) %>%
+  mutate(any_stance = if_else(any_pro_stance > 0 | any_anti_stance > 0, 1, 0))
+
+repl_df %<>% left_join(any_stance_df, by="author_id")
+sum(any_stance_df$any_stance)
+mean(any_stance_df$any_stance)
+
+topic_stance_df <- repl_df %>%
+  group_by(author_id) %>%
+  summarise(
+    climate_pro_stance = sum(stance_climate_action > 0, na.rm = TRUE),
+    climate_anti_stance = sum(stance_climate_action < 0, na.rm = TRUE),
+    cultural_pro_stance = sum(stance_cultural_liberalism > 0, na.rm = TRUE),
+    cultural_anti_stance = sum(stance_cultural_liberalism < 0, na.rm = TRUE),
+    econ_pro_stance = sum(stance_econ_collectivism > 0, na.rm = TRUE),
+    econ_anti_stance = sum(stance_econ_collectivism < 0, na.rm = TRUE)
+  ) %>%
+  mutate(
+    climate_stance = if_else(climate_pro_stance > 0 | climate_anti_stance > 0, 1, 0),
+    cultural_stance = if_else(cultural_pro_stance > 0 | cultural_anti_stance > 0, 1, 0),
+    econ_stance = if_else(econ_pro_stance > 0 | econ_anti_stance > 0, 1, 0)
+  )
+
+repl_df %<>% left_join(topic_stance_df, by="author_id")
+```
+
+```{r}
+label_map  <- c(stance_climate_action = "Climate Action",
+                pro_techno_prop = "Techno-Optism",
+                pro_beh_prop = "Behavioural Adjustment",
+                stance_cultural_liberalism  = "Cultural\nLiberalism",
+                stance_econ_collectivism = "Economic\nCollectivism",
+                egocentrism = "Egocentricism", 
+                toxicity = "Toxicity", 
+                emotionality = "Emotionality-Reasoning",
+                any_stance = "% Political (Ever)",
+                climate_stance = "% Climate Stance (Ever)",
+  cultural_stance = "% Cultural Stance (Ever)",
+  econ_stance = "% Economic Stance (Ever)")
+
+setDT(repl_df)
+
+# Specify the columns you want to average
+columns_to_average <- c("stance_climate_action", "pro_beh_prop", "pro_techno_prop", 
+                        "stance_cultural_liberalism", "stance_econ_collectivism",
+                        "egocentrism", "toxicity", "emotionality", 
+                        "any_stance", "climate_stance", "cultural_stance", "econ_stance")
+
+# Aggregate by author_id, calculating the mean for each specified column
+au_bal <- repl_df[, lapply(.SD, mean, na.rm = T), by = author_id, .SDcols = columns_to_average]
+
+# Generate a summary table using the psych package
+au_bal <- au_bal[,toxicity:=ifelse(is.nan(toxicity),0,toxicity)] # converts the 10 cases with NaN to 0
+summary_stats <- describe(au_bal %>% select(all_of(columns_to_average)), skew = F, interp = F ) # add median
+summary_stats$se <- NULL
+summary_stats$range <- NULL
+summary_stats$vars <- NULL
+summary_stats$Variable <- rownames(summary_stats)
+summary_stats[sapply(summary_stats, is.numeric)] <- lapply(summary_stats[sapply(summary_stats, is.numeric)], round, digits = 4)
+summary_stats <- as.data.frame(summary_stats)
+row.names(summary_stats) <- NULL
+
+
+summary_stats %<>% select(Variable, Mean=mean, Median=median, SD=sd, Min=min, Max=max, N=n)
+summary_stats$Variable <- label_map[summary_stats$Variable]
+
+# these summary stats are then manually entered into the latex table code used to table 1
+summary_stats
+```
+
+
+## Rest of Author level features
+
+This is done on full balanced set of academics
+
+```{r}
+df_tab1 <- read_csv("../2_data/df_tab1.csv")
+```
+
+for repl_df only. need it for all
+```{r}
+label_map  <- c(is_male = "Gender: Male",
+                is_humanities = "Field: Humanities",
+                is_stem = "Field: STEM",
+                is_soc_sci = "Field: Social Sciences",
+                works_count = "Nbr. Works",
+                impact_factor = "Impact Factor (2Y)",
+                cited_by_count = "Nbr. Citations",
+                avg_favourites_count="Nbr. Likes",
+                avg_retweet_count="Nbr. Retweets",
+                avg_statuses_count="Nbr. Posts",
+                avg_friends_count="Nbr. Accounts Followed",
+                avg_followers_count="Nbr. Followers"
+)
+
+setDT(df_tab1)
+
+# Specify the columns you want to average
+columns_to_average <- c("is_male", "is_humanities", "is_stem", "is_soc_sci", 
+                        "cited_by_count", "impact_factor", "works_count", 
+                        "avg_favourites_count", "avg_retweet_count", "avg_statuses_count",
+                        "avg_friends_count", "avg_followers_count"
+                        )
+
+# Aggregate by author_id, calculating the mean for each specified column
+au_bal <- df_tab1[, lapply(.SD, mean, na.rm = F), by = author_id, .SDcols = columns_to_average]
+
+# Generate a summary table using the psych package
+summary_stats <- describe(au_bal %>% select(all_of(columns_to_average)), skew = F, interp = F ) # add median
+summary_stats$se <- NULL
+summary_stats$range <- NULL
+summary_stats$vars <- NULL
+summary_stats$Variable <- rownames(summary_stats)
+summary_stats[sapply(summary_stats, is.numeric)] <- lapply(summary_stats[sapply(summary_stats, is.numeric)], round, digits = 3)
+summary_stats <- as.data.frame(summary_stats)
+row.names(summary_stats) <- NULL
+
+
+summary_stats %<>% select(Variable, Mean=mean, Median=median, SD=sd, Min=min, Max=max, N=n)
+summary_stats$Variable <- label_map[summary_stats$Variable]
+
+# these summary stats are then manually entered into the latex table code used to table 1
+summary_stats
+```
+
+# Table 2 (SQL Queries on Raw Data)
+
+The following code chunks contain SQL queries made to the raw tweet level data in Google Cloud's BigQuery Database. Since we are unable to provide access to raw data, we include the resulting output right after the chunk. These were manually entered into a latex table code to create Table 2.
+
+This creates a balanced data set
+```{sql}
+CREATE OR REPLACE TABLE aca_analysis.authors_tweets_bal AS
+SELECT 
+    a.*
+FROM 
+    academics.authors_tweets a
+INNER JOIN 
+    (SELECT 
+        user_id
+    FROM 
+        academics.authors_tweets
+    WHERE 
+        created_at_date BETWEEN '2016-01-01' AND '2016-06-30'
+    OR 
+        created_at_date BETWEEN '2022-07-01' AND '2022-12-31'
+    GROUP BY 
+        user_id
+    HAVING 
+        COUNT(DISTINCT CASE WHEN created_at_date BETWEEN '2016-01-01' AND '2016-06-30' THEN created_at_date END) >= 1
+    AND 
+        COUNT(DISTINCT CASE WHEN created_at_date BETWEEN '2022-07-01' AND '2022-12-31' THEN created_at_date END) >= 1) b ON a.user_id = b.user_id;
+```
+
+This summarises the number of character (Table 2)
+```{sql}
+SELECT 
+  AVG(LENGTH(text)) AS mean_length,
+  APPROX_QUANTILES(LENGTH(text), 100)[SAFE_ORDINAL(50)] AS median_length,
+  STDDEV(LENGTH(text)) AS std_dev_length,
+  APPROX_QUANTILES(LENGTH(text), 100)[SAFE_ORDINAL(25)] AS percentile_25th,
+  APPROX_QUANTILES(LENGTH(text), 100)[SAFE_ORDINAL(75)] AS percentile_75th,
+  MIN(LENGTH(text)) AS min_length,
+  MAX(LENGTH(text)) AS max_length
+FROM 
+  aca_analysis.authors_tweets_bal;
+
+```
+mean_length	median_length	std_dev_length	percentile_25th	percentile_75th	min_length	max_length
+140.11	    127	            79.18           	79	            179	        0	            1141
+
+This summarises the number of likes, i.e. favourites (Table 2)
+```{sql}
+SELECT 
+  AVG(favourites_count) AS mean,
+  APPROX_QUANTILES(favourites_count, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(favourites_count) AS std_dev,
+  MIN(favourites_count) AS min,
+  APPROX_QUANTILES(favourites_count, 100)[SAFE_ORDINAL(25)] AS percentile_25th,
+  APPROX_QUANTILES(favourites_count, 100)[SAFE_ORDINAL(75)] AS percentile_75th,
+  MAX(favourites_count) AS max
+FROM 
+  aca_analysis.authors_tweets_bal;
+```
+mean_length	median_length	std_dev_length	min_length	percentile_25th	percentile_75th	max_length
+4525.27   	2701	        6955.95	            0	        1181	           5290	          293797
+
+This summarises the intensive margin of retweets (Table 2)
+```{sql}
+SELECT 
+  AVG(retweet_count) AS mean,
+  APPROX_QUANTILES(retweet_count, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(retweet_count) AS std_dev,
+  MIN(retweet_count) AS min,
+  APPROX_QUANTILES(retweet_count, 100)[SAFE_ORDINAL(25)] AS percentile_25th,
+  APPROX_QUANTILES(retweet_count, 100)[SAFE_ORDINAL(75)] AS percentile_75th,
+  MAX(retweet_count) AS max
+FROM 
+  aca_analysis.authors_tweets_bal;
+
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+614.13	1	    14888.53	0	0	                7	            3712839
+
+This summarises the extensive margin of retweets (Table 2)
+```{sql}
+SELECT 
+  AVG(CAST(is_retweet AS INT64)) AS mean,  -- Average of is_retweet after converting boolean to integer
+  APPROX_QUANTILES(CAST(is_retweet AS INT64), 100)[SAFE_ORDINAL(50)] AS median, -- Median
+  STDDEV(CAST(is_retweet AS INT64)) AS std_dev, -- Standard deviation
+  MIN(CAST(is_retweet AS INT64)) AS min, -- Minimum
+  APPROX_QUANTILES(CAST(is_retweet AS INT64), 100)[SAFE_ORDINAL(25)] AS percentile_25th, -- 25th percentile
+  APPROX_QUANTILES(CAST(is_retweet AS INT64), 100)[SAFE_ORDINAL(75)] AS percentile_75th, -- 75th percentile
+  MAX(CAST(is_retweet AS INT64)) AS max -- Maximum
+FROM 
+  aca_analysis.authors_tweets_bal;
+
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+0.42	0	    0.49	0	0	1	1
+
+This summarises the extensive margin of English tweets (Table 2)
+```{sql}
+SELECT 
+  AVG(is_en) AS mean,  -- Average of is_en
+  APPROX_QUANTILES(is_en, 100)[SAFE_ORDINAL(50)] AS median, -- Median
+  STDDEV(is_en) AS std_dev, -- Standard deviation
+  MIN(is_en) AS min, -- Minimum
+  APPROX_QUANTILES(is_en, 100)[SAFE_ORDINAL(25)] AS percentile_25th, -- 25th percentile
+  APPROX_QUANTILES(is_en, 100)[SAFE_ORDINAL(75)] AS percentile_75th, -- 75th percentile
+  MAX(is_en) AS max -- Maximum
+FROM 
+  (
+    SELECT 
+      CASE 
+        WHEN lang = 'en' THEN 1
+        ELSE 0
+      END AS is_en
+    FROM 
+      aca_analysis.authors_tweets_bal
+  );
+
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+0.77	1	        0.42	0	1	1	1
+
+This summarises the number of words in full set of tweets (Table 2)
+```{sql}
+SELECT 
+  AVG(total_words) AS mean,  -- Average of total_words
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(50)] AS median, -- Median
+  STDDEV(total_words) AS std_dev, -- Standard deviation
+  MIN(total_words) AS min, -- Minimum
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(25)] AS percentile_25th, -- 25th percentile
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(75)] AS percentile_75th, -- 75th percentile
+  MAX(total_words) AS max -- Maximum
+FROM 
+  (
+    SELECT 
+      ARRAY_LENGTH(REGEXP_EXTRACT_ALL(REGEXP_REPLACE(REGEXP_REPLACE(text, r'https?://\S+', ''), r'[^\w\s]', ''), r'\b\w+\b')) AS total_words
+    FROM 
+      aca_analysis.authors_tweets_bal
+  );
+
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+18.14	16	12	0	9	24	141
+
+
+This summarises the number of Affective words (Table 2)
+```{sql}
+SELECT 
+  AVG(affect_words) AS mean,
+  APPROX_QUANTILES(affect_words, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(affect_words) AS std_dev,
+  MIN(affect_words) AS min,
+  APPROX_QUANTILES(affect_words, 100)[SAFE_ORDINAL(25)] AS p25th,
+  APPROX_QUANTILES(affect_words, 100)[SAFE_ORDINAL(75)] AS p75th,
+  MAX(affect_words) AS max
+FROM 
+  aca_analysis.authors_wordcount_emotionality_bal;
+```
+mean	median	std_dev	min	p25th	p75th	max
+1.22	1	1.36	0	0	2	56
+
+This summarises the number of Cognition words (Table 2)
+```{sql}
+SELECT 
+  AVG(cognition_words) AS mean,
+  APPROX_QUANTILES(cognition_words, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(cognition_words) AS std_dev,
+  MIN(cognition_words) AS min,
+  APPROX_QUANTILES(cognition_words, 100)[SAFE_ORDINAL(25)] AS p25th,
+  APPROX_QUANTILES(cognition_words, 100)[SAFE_ORDINAL(75)] AS p75th,
+  MAX(cognition_words) AS max
+FROM 
+  aca_analysis.authors_wordcount_emotionality_bal;
+```
+mean	median	std_dev	min	p25th	p75th	max
+2.58	2	2.09	0	1	3	71
+
+This summarises the number of words in set of English tweets (Table 2)
+```{sql}
+SELECT 
+  AVG(total_words) AS mean,
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(total_words) AS std_dev,
+  MIN(total_words) AS min,
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(25)] AS p25th,
+  APPROX_QUANTILES(total_words, 100)[SAFE_ORDINAL(75)] AS p75th,
+  MAX(total_words) AS max
+FROM 
+  aca_analysis.authors_wordcount_emotionality_bal;
+```
+mean	median	std_dev	min	p25th	p75th	max
+19.49	17	11.68	0	11	26	122
+
+
+a_prop (Table 2)
+```{sql}
+SELECT 
+  AVG(a_prop) AS mean,
+  APPROX_QUANTILES(a_prop, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(a_prop) AS std_dev,
+  MIN(a_prop) AS min,
+  APPROX_QUANTILES(a_prop, 100)[SAFE_ORDINAL(25)] AS p25th,
+  APPROX_QUANTILES(a_prop, 100)[SAFE_ORDINAL(75)] AS p75th,
+  MAX(a_prop) AS max
+FROM 
+  aca_analysis.authors_wordcount_emotionality_bal;
+```
+mean	median	std_dev	min	p25th	p75th	max
+0.06	0.05	0.08	0	0	0.10	9.75
+
+c_prop (Table 2)
+```{sql}
+SELECT 
+  AVG(c_prop) AS mean,
+  APPROX_QUANTILES(c_prop, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(c_prop) AS std_dev,
+  MIN(c_prop) AS min,
+  APPROX_QUANTILES(c_prop, 100)[SAFE_ORDINAL(25)] AS p25th,
+  APPROX_QUANTILES(c_prop, 100)[SAFE_ORDINAL(75)] AS p75th,
+  MAX(c_prop) AS max
+FROM 
+  aca_analysis.authors_wordcount_emotionality_bal;
+```
+mean	median	std_dev	min	p25th	p75th	max
+0.14	0.13	0.12	0	0.07	0.19	9.0
+
+self_focus_words (Table 2)
+```{sql}
+SELECT 
+  AVG(self_focus_words) AS mean,  -- Average of self_focus_words
+  APPROX_QUANTILES(self_focus_words, 100)[SAFE_ORDINAL(50)] AS median, -- Median
+  STDDEV(self_focus_words) AS std_dev, -- Standard deviation
+  MIN(self_focus_words) AS min, -- Minimum
+  APPROX_QUANTILES(self_focus_words, 100)[SAFE_ORDINAL(25)] AS percentile_25th, -- 25th percentile
+  APPROX_QUANTILES(self_focus_words, 100)[SAFE_ORDINAL(75)] AS percentile_75th, -- 75th percentile
+  MAX(self_focus_words) AS max -- Maximum
+FROM 
+  (
+    SELECT 
+      SAFE_DIVIDE(self_focus_words, total_words) AS self_focus_words,
+    FROM 
+      aca_analysis.authors_wordcount_self_inclusive_balanced
+  );
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+0.33	0	0.77	0	0	0	36
+
+
+share_self_focus (Table 2)
+```{sql}
+SELECT 
+  AVG(share_self_focus) AS mean,  -- Average of share_self_focus
+  APPROX_QUANTILES(share_self_focus, 100)[SAFE_ORDINAL(50)] AS median, -- Median
+  STDDEV(share_self_focus) AS std_dev, -- Standard deviation
+  MIN(share_self_focus) AS min, -- Minimum
+  APPROX_QUANTILES(share_self_focus, 100)[SAFE_ORDINAL(25)] AS percentile_25th, -- 25th percentile
+  APPROX_QUANTILES(share_self_focus, 100)[SAFE_ORDINAL(75)] AS percentile_75th, -- 75th percentile
+  MAX(share_self_focus) AS max -- Maximum
+FROM 
+  (
+    SELECT 
+      SAFE_DIVIDE(self_focus_words, total_words) AS share_self_focus,
+    FROM 
+      aca_analysis.authors_wordcount_self_inclusive_balanced
+  );
+```
+mean	median	std_dev	min	percentile_25th	percentile_75th	max
+0.017	0	0.04	0	0.0	0.0	1
+
+Toxicity (Table 2)
+```{sql}
+SELECT 
+  AVG(TOXICITY) AS mean,
+  APPROX_QUANTILES(TOXICITY, 100)[SAFE_ORDINAL(50)] AS median,
+  STDDEV(TOXICITY) AS std_dev,
+  APPROX_QUANTILES(TOXICITY, 100)[SAFE_ORDINAL(25)] AS percentile_25th,
+  APPROX_QUANTILES(TOXICITY, 100)[SAFE_ORDINAL(75)] AS percentile_75th,
+  MIN(TOXICITY) AS min,
+  MAX(TOXICITY) AS max
+FROM 
+  aca_analysis.prsp_aca_r2_2017to22;
+```
+mean	median	std_dev	percentile_25th	percentile_75th	min	max     n 
+0.04	0.02    0.07    	0.01	        0.03	            0	0.98 12,698,961
+
+
+# Table 3
+
+The text analysis conducted to produce the table 3 was conducted in three batches. The following code was used to create objects that were then manually populated into a latex table code to create table 3.
+
+load data
+```{r}
+stance_main<-read_csv("../2_data/df_tab2_stance_main.csv")
+stance_clim_narratives<-read_csv("../2_data/df_tab2_stance_clim_narratives.csv")
+stance_tax<-read_csv("../2_data/df_tab2_stance_tax.csv")
+```
+
+generate summary statistics
+
+The output is either provided after the chunk or stored as an object. To view an object, you can use the 'view()' command.
+for instance, view(stance_climate_comb_dist) will give the distribution of climate action tweets.
+```{r}
+stance_climate_comb <- stance_main %>% filter(topic_label == "climate_comb")
+stance_immi_comb <- stance_main %>% filter(topic_label == "immi_comb")
+stance_abortion_rights <- stance_main %>% filter(topic_label == "abortion_rights")
+stance_racism_or_race_relations <- stance_main %>% filter(topic_label == "racism_or_race_relations")
+stance_welfare_state <- stance_main %>% filter(topic_label == "welfare_state")
+stance_redistribution_of_income <- stance_main %>% filter(topic_label == "redistribution_of_income")
+
+stance_climate_comb_dist <- stance_climate_comb %>% count(stance_climate_comb) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+nrow(stance_climate_comb) # 322519
+
+stance_abortion_rights_dist <- stance_abortion_rights %>% count(stance_abortion_rights) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+print(stance_abortion_rights_dist)
+nrow(stance_abortion_rights) # 9873
+
+stance_racism_or_race_relations_dist <- stance_racism_or_race_relations %>% count(stance_racism_or_race_relations) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+stance_racism_or_race_relations_dist
+nrow(stance_racism_or_race_relations) # 35162
+
+stance_welfare_state_dist <- stance_welfare_state %>% count(stance_welfare_state) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+stance_welfare_state_dist
+nrow(stance_welfare_state) # 40007
+
+stance_redistribution_of_income_dist <- stance_redistribution_of_income %>% count(stance_redistribution_of_income) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+stance_redistribution_of_income_dist
+nrow(stance_redistribution_of_income) # 36269
+
+
+nrow(stance_tax) # 83119
+sum(stance_tax$pro)
+sum(stance_tax$pro)/nrow(stance_tax)
+sum(stance_tax$anti)
+sum(stance_tax$anti)/nrow(stance_tax)
+sum(stance_tax$neutral)
+sum(stance_tax$neutral)/nrow(stance_tax)
+
+
+nrow(stance_tax) # 83119
+sum(stance_tax$pro)
+sum(stance_tax$pro)/nrow(stance_tax)
+sum(stance_tax$anti)
+sum(stance_tax$anti)/nrow(stance_tax)
+sum(stance_tax$neutral)
+sum(stance_tax$neutral)/nrow(stance_tax)
+
+
+climate_action_responses_comb_meta_bal_dist <- stance_clim_narratives %>% count(response_clean) %>% mutate(prop=n/sum(n), total_prop=(n/138372165)*100)
+nrow(stance_clim_narratives)
+```
+

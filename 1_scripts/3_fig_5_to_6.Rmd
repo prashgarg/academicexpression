@@ -1,0 +1,2095 @@
+---
+title: "3_fig_5_to_6"
+author: "Prashant Garg"
+date: "2024-06-07"
+output: html_document
+---
+
+# Goal: create Figures 5 and 6 
+
+----------------------------------------------------------------------
+# Layperson Explanation:
+
+Load Data: The script starts by loading datasets from CSV files into dataframes.
+Prepare Data for Figure 5: It defines lists and mappings for variables and their labels, conditions for different types, and a function to calculate monthly averages.
+Convert Date Column: Converts date columns to the appropriate format.
+Apply Function to Create Monthly Averages: Applies the function to create monthly averages based on different conditions and combines the results.
+Label and Filter Results: Assigns labels to the combined results and filters out rows without labels. Separates results by variable group.
+Plot Figure 5: Creates and saves plots for different variable groups using ggplot.
+Prepare Data for Figure 6: Combines academic and general population data, converts columns to appropriate types, defines conditions, and applies the function to create monthly averages.
+Label and Filter Results for Figure 6: Assigns labels to the combined results and filters out rows without labels. Separates results by variable group.
+Plot Figure 6: Creates and saves plots for different variable groups using ggplot.
+
+-----------------------------------------------------------------------
+# Pseudocode:
+
+# Load Data
+LOAD datasets 'repl_df.csv' and 'users_df.csv' into dataframes 'repl_df' and 'users_df'
+
+# Figure 5
+
+## Prepare Data
+DEFINE variable list 'variables' for analysis
+DEFINE mapping 'topic_label_mapping' for variable labels
+DEFINE groups of variables 'clim_var', 'econ_var', 'beh_var' for different analysis sections
+
+# Define conditions for Type categories
+DEFINE 'type_conditions' as a list of conditions for filtering data based on various attributes (e.g., gender, field, reach, expertise)
+
+# Function to create monthly averages based on type conditions
+DEFINE function 'create_monthly_avg' to calculate monthly averages for specified variables and conditions
+
+# Convert Date column
+CONVERT 'year_x_month' in 'repl_df' to 'Date' format
+
+# Apply function to create monthly averages
+FOR each type and condition in 'type_conditions'
+    APPLY 'create_monthly_avg' to 'repl_df'
+    STORE results in 'results_list'
+
+# Combine results
+COMBINE 'results_list' into 'results_df_est_comb'
+
+# Label and filter results
+ASSIGN labels to 'results_df_est_comb' based on 'topic_label_mapping'
+FILTER out rows without labels
+GROUP results by 'Main', 'Gender', 'Fields', 'Reach by Expertise', 'University Rankings', 'Country'
+
+# Separate results by variable group
+SEPARATE 'results_df_est_comb' into 'results_df_est_comb_beh_var', 'results_df_est_comb_clim_var', 'results_df_est_comb_econ_var' based on 'beh_var', 'clim_var', 'econ_var'
+
+# Plot Figure 5
+
+## Part a
+PLOT 'results_df_est_comb_beh_var' for 'Main' group using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_a.jpg'
+
+## Part b
+PLOT 'results_df_est_comb_clim_var' for 'Main' group and 'stance_climate_action' using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_b.jpg'
+
+## Part c
+PLOT 'results_df_est_comb_econ_var' for 'Main' group using ggplot with loess smoothing
+FACET plot by 'Label'
+SAVE plot as 'fig5_c.jpg'
+
+# Figure 6
+
+## Prepare Data
+COMBINE 'repl_df' and 'users_df' into 'us_aca_users_comb' with 'is_aca' flag indicating academics and general population
+
+# Convert columns to factors and Date
+CONVERT 'indiv_id' and 'year_x_month' to factors, and 'year_x_month' to 'Date' format
+
+# Define conditions for Type categories
+DEFINE 'type_conditions' as a list of conditions for filtering data into 'Academics' and 'General Population'
+
+# Apply function to create monthly averages
+FOR each type and condition in 'type_conditions'
+    APPLY 'create_monthly_avg' to 'us_aca_users_comb'
+    STORE results in 'results_list2'
+
+# Combine results
+COMBINE 'results_list2' into 'results_df_est_comb2'
+
+# Label and filter results
+ASSIGN labels to 'results_df_est_comb2' based on 'topic_label_mapping'
+FILTER out rows without labels
+
+# Separate results by variable group
+SEPARATE 'results_df_est_comb2' into 'results_df_est_comb_beh_var2', 'results_df_est_comb_clim_var2', 'results_df_est_comb_econ_var2' based on 'beh_var', 'clim_var', 'econ_var'
+
+# Plot Figure 6
+
+## Part a
+PLOT 'results_df_est_comb_beh_var2' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_a.jpg'
+
+## Part b
+PLOT 'results_df_est_comb_clim_var2' for 'stance_climate_action' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_b.jpg'
+
+## Part c
+PLOT 'results_df_est_comb_econ_var2' using ggplot with loess smoothing, colored by 'Type'
+FACET plot by 'Label'
+SAVE plot as 'fig6_c.jpg'
+
+# Conducts Statistical Tests and Provides Wide Range of Evidence for Statistical Reportings
+
+----------------------------------------------------------------------
+
+
+
+# data
+```{r}
+repl_df <- read_csv( "../2_data/repl_df.csv")
+users_df <- read_csv( "../2_data/users_df.csv")
+```
+
+# Figure 5 
+## prep 
+```{r}
+variables <- c("egocentrism", "toxicity", "emotionality", "stance_climate_action", "pro_techno_prop", "pro_beh_prop",  "stance_econ_collectivism", "stance_cultural_liberalism") 
+
+topic_label_mapping <- c(
+  "egocentrism" = "Egocentrism",
+  "toxicity" = "Toxicity",
+  "emotionality" = "Emotionality/\nReasoning",
+  "stance_climate_action" = "Climate\nAction",
+  "pro_techno_prop" = "Techno-\nOptimism",
+  "pro_beh_prop" = "Behavioural\nAdjustment",
+  "stance_econ_collectivism" = "Economic\nCollectivism",
+  "stance_cultural_liberalism" = "Cultural\nliberalism"
+)
+
+clim_var <- c("pro_techno_prop", "pro_beh_prop", "stance_climate_action")
+econ_var <- c("stance_cultural_liberalism",  "stance_econ_collectivism")
+beh_var <- c("emotionality", "toxicity",  "egocentrism")
+
+# Define conditions for Type categories using strings for column names
+type_conditions <- list(
+  `Main` = "",  # Main data, no filtering needed
+  `Female` = "is_female == 1",
+  `Male` = "is_male == 1",
+  `Humanities` = "is_humanities == 1",
+  `STEM` = "is_stem == 1",
+  `Soc. Sciences` = "is_soc_sci == 1",
+  `High R-High C` = "type_H_reach_H_cred == 1",
+  `High R-Low C` = "type_H_reach_L_cred == 1",
+  `Low R-High C` = "type_L_reach_H_cred == 1",
+  `Low R-Low C` = "type_L_reach_L_cred == 1",
+  
+  `High R-E (Climate)` = "type_H_reach_H_exp_climate == 1",
+  `High R-Not E (Climate)` = "type_H_reach_L_exp_climate == 1",
+  `Low R-E (Climate)` = "type_L_reach_H_exp_climate == 1",
+  `Low R-Not E (Climate)` = "type_L_reach_L_exp_climate == 1",
+  
+  `High R-E (Culture)` = "type_H_reach_H_exp_cult == 1",
+  `High R-Not E (Culture)` = "type_H_reach_L_exp_cult == 1",
+  `Low R-E (Culture)` = "type_L_reach_H_exp_cult == 1",
+  `Low R-Not E (Culture)` = "type_L_reach_L_exp_cult == 1",
+  
+  `High R-E (Economy)` = "type_H_reach_H_exp_econ == 1",
+  `High R-Not E (Economy)` = "type_H_reach_L_exp_econ == 1",
+  `Low R-E (Economy)` = "type_L_reach_H_exp_econ == 1",
+  `Low R-Not E (Economy)` = "type_L_reach_L_exp_econ == 1",
+  
+  `US` = "is_US == 1",
+  `Non-US` = "is_US == 0",
+  `1-100` = "ranking_1_100 == 1",
+  `100+` = "ranking_1_100 == 0"
+)
+
+# Convert `ranking_cat` and `is_US` into separate dummy variables
+repl_df <- repl_df %>%
+  mutate(
+    ranking_1_100 = ifelse(ranking_cat == "1-100", 1, 0),
+    ranking_101_500 = ifelse(ranking_cat == "101-500", 1, 0),
+    ranking_501_1500 = ifelse(ranking_cat == "501-1500", 1, 0),
+    ranking_1501 = ifelse(ranking_cat == "1501+", 1, 0)
+  )
+
+# Function to create monthly averages based on type conditions
+create_monthly_avg <- function(data, vars, type, condition) {
+  if (condition != "") {
+    data <- data %>% filter(!!rlang::parse_expr(condition))
+  }
+  
+  data %>%
+    select(Date, all_of(vars)) %>%
+    mutate(Date = floor_date(as.Date(Date), "month")) %>%
+    group_by(Date) %>%
+    summarise(across(all_of(vars), mean, na.rm = TRUE), .groups = 'drop') %>%
+    pivot_longer(cols = -Date, names_to = "variable", values_to = "value") %>%
+    mutate(Type = type)  # Assign Type directly
+}
+
+
+repl_df$Date <- as.Date(paste0(repl_df$year_x_month, "_01"), format="%Y_%m_%d")
+
+results_list <- Map(function(type, cond) create_monthly_avg(repl_df, variables, type, cond), 
+                    names(type_conditions), type_conditions)
+
+results_df_est_comb <- bind_rows(results_list)
+
+results_df_est_comb$Label <- topic_label_mapping[results_df_est_comb$variable]
+results_df_est_comb %<>% drop_na(Label)
+
+results_df_est_comb$Group <- with(results_df_est_comb, case_when(
+  Type %in% c("Main") ~ "Main",
+  Type %in% c("Female", "Male") ~ "Gender",
+  Type %in% c("Humanities", "STEM", "Soc. Sciences") ~ "Fields",
+  Type %in% c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C") ~ "Twitter\nReach\n(R) by\nAcademic\nCredibility\n(C)",
+  
+  Type %in% c("High R-E (Climate)", "High R-Not E (Climate)", "Low R-E (Climate)", "Low R-Not E (Climate)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nClimate",
+  Type %in% c("High R-E (Culture)", "High R-Not E (Culture)", "Low R-E (Culture)", "Low R-Not E (Culture)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nCulture",
+  Type %in% c("High R-E (Economy)", "High R-Not E (Economy)", "Low R-E (Economy)", "Low R-Not E (Economy)") ~ "Twitter\nReach\n(R) by\nExpertise\n(E)\nEconomics",
+  Type %in% c("1-100", "100+") ~ "University\nRankings",
+  
+  Type %in% c("US", "Non-US") ~ "Country",
+  TRUE ~ "Other"
+))
+
+
+results_df_est_comb_beh_var <- results_df_est_comb %>% filter(variable %in% beh_var)
+current_levels <- c("Egocentrism","Toxicity", "Emotionality/\nReasoning")
+new_levels <- c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+results_df_est_comb_beh_var$Label <- factor(results_df_est_comb_beh_var$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_clim_var <- results_df_est_comb %>% filter(variable %in% clim_var)
+current_levels <- c("Climate\nAction","Techno-\nOptimism", "Behavioural\nAdjustment")
+new_levels <- c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+results_df_est_comb_clim_var$Label <- factor(results_df_est_comb_clim_var$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_econ_var <- results_df_est_comb %>% filter(variable %in% econ_var)
+current_levels <- c("Cultural\nliberalism","Economic\nCollectivism")
+new_levels <- c("Cultural liberalism","Economic Collectivism")
+results_df_est_comb_econ_var$Label <- factor(results_df_est_comb_econ_var$Label, levels = current_levels, labels = new_levels)
+
+```
+
+plot
+```{r}
+# Combine all datasets into a single data frame
+results_df_combined <- bind_rows(
+  results_df_est_comb_beh_var,
+  results_df_est_comb_clim_var,
+  results_df_est_comb_econ_var
+)
+
+# Adjust labels for the combined data
+results_df_combined$Label <- factor(results_df_combined$Label, levels = c(
+  "Egocentrism", "Toxicity", "Emotionality/Reasoning",
+  "Climate Action", "Techno-Optimism", "Behavioural Adjustment",
+  "Cultural liberalism", "Economic Collectivism"
+))
+
+hline_data <- data.frame(
+  Label = factor(c(
+    "Egocentrism", "Toxicity", "Emotionality/Reasoning",
+    "Climate Action", "Techno-Optimism", "Behavioural Adjustment",
+    "Cultural liberalism", "Economic Collectivism"
+  ), levels = levels(results_df_combined$Label)),  # Match factor levels explicitly
+  yintercept = c(0, 0, 1, 0, 0, 0, 0, 0)  # 1 for Emotionality/Reasoning, 0 for others
+)
+
+
+# Revised plot with shaded region along a line
+p_combined <- ggplot(results_df_combined %>% filter(Group == "Main"), aes(x = Date, y = value)) +
+  geom_smooth(
+    method = "loess", formula = 'y ~ x', se = TRUE, color = "black", size = 0.5,
+    fill = "grey80", alpha = 0.3  # Shaded region for variability
+  ) +
+  geom_hline(data = hline_data, aes(yintercept = yintercept), linetype = "dotted", color = "grey99", size = 0.5,alpha=0) +  # Add horizontal lines
+  labs(y = "Behavioural Expression", x = "Year by Month") +
+  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +  # 3x3 layout
+  theme_classic(base_size = 7) +  # Journal-compliant font size
+  theme(
+    text = element_text(family = "Helvetica"),  # Use Helvetica font
+    strip.text = element_text(face = "bold", size = 7),  # Adjust facet label size
+    axis.text = element_text(size = 7),  # Adjust axis text size
+    axis.title = element_text(size = 7),  # Adjust axis title size
+    panel.grid.major = element_blank(),  # Remove major gridlines
+    panel.grid.minor = element_blank(),  # Remove minor gridlines
+    panel.background = element_blank()  # Ensure clean panel backgrounds
+  )
+
+# Save as EPS and PDF formats for journal compliance
+ggsave("fig5.eps", p_combined, width = 180 / 25.4, height = 120 / 25.4, device = cairo_ps)
+ggsave("fig5.pdf", p_combined, width = 180 / 25.4, height = 120 / 25.4, device = cairo_pdf)
+
+```
+
+
+# Figure 6
+## prep
+```{r}
+us_aca_users_comb <-bind_rows(repl_df %>%  
+                           filter(affiliation_country_code=="US") %>%
+                           mutate(indiv_id = as.character(author_id)) %>%
+                           mutate(is_aca = 1),
+                         users_df %>% 
+                           rename(indiv_id = user_id) %>%
+                           select(-is_bot_50) %>%
+                           mutate(is_aca = 0))
+
+us_aca_users_comb$indiv_id <- as.factor(us_aca_users_comb$indiv_id)
+us_aca_users_comb$year_x_month <- as.factor(us_aca_users_comb$year_x_month)
+us_aca_users_comb$Date <- as.Date(paste0(us_aca_users_comb$year_x_month, "_01"), format="%Y_%m_%d")
+
+
+
+type_conditions <- list(
+  Academics = "is_aca == 1",
+  `General Population` = "is_aca == 0"
+)
+
+
+create_monthly_avg <- function(data, vars, type, condition) {
+  if (condition != "") {
+    data <- data %>% filter(!!rlang::parse_expr(condition))
+  }
+  
+  data %>%
+    select(Date, all_of(vars)) %>%
+    mutate(Date = floor_date(as.Date(Date), "month")) %>%
+    group_by(Date) %>%
+    summarise(across(all_of(vars), mean, na.rm = TRUE), .groups = 'drop') %>%
+    pivot_longer(cols = -Date, names_to = "variable", values_to = "value") %>%
+    mutate(Type = type)  # Assign Type directly
+}
+
+results_list2 <- Map(function(type, cond) create_monthly_avg(us_aca_users_comb, variables, type, cond), 
+                    names(type_conditions), type_conditions)
+
+results_df_est_comb2 <- bind_rows(results_list2)
+
+results_df_est_comb2$Label <- topic_label_mapping[results_df_est_comb2$variable]
+results_df_est_comb2 %<>% drop_na(Label)
+
+
+
+results_df_est_comb_beh_var2 <- results_df_est_comb2 %>% filter(variable %in% beh_var)
+current_levels <- c("Egocentrism","Toxicity", "Emotionality/\nReasoning")
+new_levels <- c("Egocentrism","Toxicity", "Emotionality/Reasoning")
+results_df_est_comb_beh_var2$Label <- factor(results_df_est_comb_beh_var2$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_clim_var2 <- results_df_est_comb2 %>% filter(variable %in% clim_var)
+current_levels <- c("Climate\nAction","Techno-\nOptimism", "Behavioural\nAdjustment")
+new_levels <- c("Climate Action","Techno-Optimism", "Behavioural Adjustment")
+results_df_est_comb_clim_var2$Label <- factor(results_df_est_comb_clim_var2$Label, levels = current_levels, labels = new_levels)
+
+results_df_est_comb_econ_var2 <- results_df_est_comb2 %>% filter(variable %in% econ_var)
+current_levels <- c("Cultural\nliberalism","Economic\nCollectivism")
+new_levels <- c("Cultural liberalism","Economic Collectivism")
+results_df_est_comb_econ_var2$Label <- factor(results_df_est_comb_econ_var2$Label, levels = current_levels, labels = new_levels)
+
+```
+
+## plot
+
+
+```{r}
+# Combine all datasets into a single data frame
+results_df_combined2 <- bind_rows(
+  results_df_est_comb_beh_var2,
+  results_df_est_comb_clim_var2,
+  results_df_est_comb_econ_var2
+)
+
+# Adjust labels for the combined data
+results_df_combined2$Label <- factor(results_df_combined2$Label, levels = c(
+  "Egocentrism", "Toxicity", "Emotionality/Reasoning",
+  "Climate Action", "Techno-Optimism", "Behavioural Adjustment",
+  "Cultural liberalism", "Economic Collectivism"
+))
+
+hline_data2 <- data.frame(
+  Label = factor(c(
+    "Egocentrism", "Toxicity", "Emotionality/Reasoning",
+    "Climate Action", "Techno-Optimism", "Behavioural Adjustment",
+    "Cultural liberalism", "Economic Collectivism"
+  ), levels = levels(results_df_combined2$Label)),  # Match factor levels explicitly
+  yintercept = c(0, 0, 1, 0, 0, 0, 0, 0)  # 1 for Emotionality/Reasoning, 0 for others
+)
+
+
+# Revised plot with two series and shaded regions
+p_combined2 <- ggplot(results_df_combined2, aes(x = Date, y = value, color = Type, fill = Type)) +
+  geom_smooth(
+    method = "loess", formula = 'y ~ x', se = TRUE, size = 0.5,
+    alpha = 0.3  # Shaded region for variability
+  ) +
+  geom_hline(data = hline_data2, aes(yintercept = yintercept), linetype = "dotted", color = "grey99",alpha=0, size = 0.1) +  # Add horizontal lines
+  labs(y = "Behavioural Expression", x = "Year by Month", color = "Group", fill = "Group") +
+  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +  # 3x3 layout
+  theme_classic(base_size = 7) +  # Journal-compliant font size
+  theme(
+    text = element_text(family = "Helvetica"),  # Use Helvetica font
+    strip.text = element_text(face = "bold", size = 7),  # Adjust facet label size
+    axis.text = element_text(size = 7),  # Adjust axis text size
+    axis.title = element_text(size = 7),  # Adjust axis title size
+    panel.grid.major = element_blank(),  # Remove major gridlines
+    panel.grid.minor = element_blank(),  # Remove minor gridlines
+    panel.background = element_blank(),  # Ensure clean panel backgrounds
+    legend.position = "bottom",  # Place legend at the bottom
+    legend.title = element_text(size = 7),  # Adjust legend title size
+    legend.text = element_text(size = 7)  # Adjust legend text size
+  ) +
+  scale_color_manual(values = c("Academics" = "steelblue", "General Population" = "indianred")) +
+  scale_fill_manual(values = c("Academics" = "steelblue", "General Population" = "indianred"))
+
+# Save as EPS and PDF formats for journal compliance
+ggsave("fig6.eps", p_combined2, width = 180 / 25.4, height = 120 / 25.4, device = cairo_ps)
+ggsave("fig6.pdf", p_combined2, width = 180 / 25.4, height = 120 / 25.4, device = cairo_pdf)
+
+```
+
+
+
+# Statistical Evidence to Support Visual Findings
+## Calculate Trends and Statistical Significance
+```{r}
+# Create a time variable (e.g., months since the start)
+repl_df$time <- as.numeric(as.Date(repl_df$Date))  # convert Date to numeric
+
+# Function to run time series regression for each variable
+run_time_series_regression <- function(data, variable) {
+  model <- lm(as.formula(paste(variable, "~ time")), data = data)
+  summary(model)
+}
+
+# List of variables for which to calculate trends
+variables <- c("egocentrism", "toxicity", "emotionality", "stance_climate_action", 
+               "pro_techno_prop", "pro_beh_prop", "stance_econ_collectivism", "stance_cultural_liberalism")
+
+# Run time series regression for each variable and save results
+trend_results <- lapply(variables, function(var) {
+  model_summary <- run_time_series_regression(repl_df, var)
+  coef <- model_summary$coefficients["time", ]
+  data.frame(
+    variable = var,
+    estimate = coef["Estimate"],
+    std_error = coef["Std. Error"],
+    CI_lower = coef["Estimate"] - 1.96 * coef["Std. Error"],
+    CI_upper = coef["Estimate"] + 1.96 * coef["Std. Error"],
+    p_value = coef["Pr(>|t|)"]
+  )
+})
+
+# Combine results into a data frame
+trend_results_df <- do.call(rbind, trend_results)
+trend_results_df
+
+```
+
+## Compare male versus female authors, over time
+```{r}
+# Filter the dataset for the years 2016 and the most recent year available
+df_filtered <- repl_df %>%  filter(year %in% c(2016, max(year)))  # Filter for 2016 and latest year
+
+# Calculate mean support for economic collectivism for male and female authors in 2016 and the latest year
+support_by_gender <- df_filtered %>%
+  group_by(year, is_female) %>%
+  summarise(mean_support = mean(stance_econ_collectivism, na.rm = TRUE),
+            n = n()) %>%
+  ungroup()
+
+# Print the mean support by year and gender
+print(support_by_gender)
+
+# Test for statistical significance (change in economic collectivism stance over time)
+# Separate for male and female authors
+t_test_female <- t.test(stance_econ_collectivism ~ year, data = df_filtered %>% filter(is_female == 1))
+t_test_male <- t.test(stance_econ_collectivism ~ year, data = df_filtered %>% filter(is_female == 0))
+
+# Print t-test results
+print(t_test_female)
+print(t_test_male)
+
+# Calculate percentage change for female authors (2016 vs most recent year)
+female_2016 <- support_by_gender %>% filter(year == 2016 & is_female == 1) %>% pull(mean_support)
+female_latest <- support_by_gender %>% filter(year == max(year) & is_female == 1) %>% pull(mean_support)
+female_percentage_change <- (female_latest - female_2016) / female_2016 * 100
+
+# Calculate percentage change for male authors (2016 vs most recent year)
+male_2016 <- support_by_gender %>% filter(year == 2016 & is_female == 0) %>% pull(mean_support)
+male_latest <- support_by_gender %>% filter(year == max(year) & is_female == 0) %>% pull(mean_support)
+male_percentage_change <- (male_latest - male_2016) / male_2016 * 100
+
+# Print percentage changes
+cat("Percentage change in support for economic collectivism among female authors:", round(female_percentage_change, 2), "%\n")
+cat("Percentage change in support for economic collectivism among male authors:", round(male_percentage_change, 2), "%\n")
+
+```
+
+## Cultural Liberalism: Fields by Year
+```{r}
+# Filter data for years of interest (2016-2022) and cultural liberalism stance
+df_fields <- repl_df %>%
+  filter(year %in% c(2016, max(year))) %>%
+  select(year, is_humanities, is_stem, is_soc_sci, stance_cultural_liberalism)
+
+# Perform t-tests to compare support for cultural liberalism in 2016 vs 2022 for each field
+t_test_humanities <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_humanities == 1))
+t_test_stem <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_stem == 1))
+t_test_soc_sci <- t.test(stance_cultural_liberalism ~ year, data = df_fields %>% filter(is_soc_sci == 1))
+
+# Print t-test results for each field
+cat("Humanities t-test results:\n")
+print(t_test_humanities)
+
+cat("\nSTEM t-test results:\n")
+print(t_test_stem)
+
+cat("\nSocial Sciences t-test results:\n")
+print(t_test_soc_sci)
+
+```
+
+## Cultural Liberalism: US and non-US, by Year
+```{r}
+# Filter data for US and non-US academics for the years of interest (2016-2022)
+df_us_vs_non_us <- repl_df %>%
+  filter(year %in% c(2016, max(year))) %>%
+  select(year, is_US, stance_climate_action, pro_techno_prop)
+
+# Perform t-tests for climate action and techno-optimism comparing US vs Non-US
+t_test_climate_us_vs_non_us <- t.test(stance_climate_action ~ is_US, data = df_us_vs_non_us)
+t_test_techno_us_vs_non_us <- t.test(pro_techno_prop ~ is_US, data = df_us_vs_non_us)
+
+# Print t-test results
+cat("Climate Action t-test results (US vs Non-US):\n")
+print(t_test_climate_us_vs_non_us)
+
+cat("\nTechno-Optimism t-test results (US vs Non-US):\n")
+print(t_test_techno_us_vs_non_us)
+
+```
+
+## General users in 2022
+```{r}
+# Filter data for the year 2022 for Egocentrism
+df_egocentrism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, egocentrism)
+
+# Perform t-test comparing egocentrism between academics and general population
+t_test_egocentrism <- t.test(egocentrism ~ is_aca, data = df_egocentrism_2022)
+
+# Print results
+print(t_test_egocentrism)
+
+# Filter data for the year 2022 for Toxicity
+df_toxicity_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, toxicity)
+
+# Perform t-test comparing toxicity between academics and general population
+t_test_toxicity <- t.test(toxicity ~ is_aca, data = df_toxicity_2022)
+
+# Print results
+print(t_test_toxicity)
+
+# Filter data for the year 2022 for Emotionality
+df_emotionality_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, emotionality)
+
+# Perform t-test comparing emotionality between academics and general population
+t_test_emotionality <- t.test(emotionality ~ is_aca, data = df_emotionality_2022)
+
+# Print results
+print(t_test_emotionality)
+
+# Filter data for stance on climate action in 2022
+df_climate_action_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_climate_action)
+
+# Perform t-test comparing climate action stance between academics and general population
+t_test_climate_action <- t.test(stance_climate_action ~ is_aca, data = df_climate_action_2022)
+
+# Print results
+print(t_test_climate_action)
+
+# Filter data for stance on cultural liberalism in 2022
+df_cultural_liberalism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_cultural_liberalism)
+
+# Perform t-test comparing cultural liberalism stance between academics and general population
+t_test_cultural_liberalism <- t.test(stance_cultural_liberalism ~ is_aca, data = df_cultural_liberalism_2022)
+
+# Print results
+print(t_test_cultural_liberalism)
+
+# Filter data for stance on economic collectivism in 2022
+df_econ_collectivism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, stance_econ_collectivism)
+
+# Perform t-test comparing economic collectivism stance between academics and general population
+t_test_econ_collectivism <- t.test(stance_econ_collectivism ~ is_aca, data = df_econ_collectivism_2022)
+
+# Print results
+print(t_test_econ_collectivism)
+
+```
+
+## Temporal Comparison (Pre-2020 vs Post-2020)
+
+Academics
+```{r}
+# Filter data for pre-pandemic (before 2020) and post-pandemic (2020 onward) comparison
+df_climate_temporal <- us_aca_users_comb %>%
+  filter(year(Date) %in% c(2016:2022)) %>%
+  mutate(period = ifelse(year(Date) < 2020, "Pre-Pandemic", "Post-Pandemic"))
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for climate action among academics
+t_test_climate_temporal <- t.test(stance_climate_action ~ period, data = df_climate_temporal %>% filter(is_aca == 1))
+
+# Print results
+print(t_test_climate_temporal)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for economic collectivism among academics
+t_test_econ_temporal <- t.test(stance_econ_collectivism ~ period, data = df_climate_temporal %>% filter(is_aca == 1))
+
+# Print results
+print(t_test_econ_temporal)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for climate action among academics
+t_test_climate_temporal_users <- t.test(stance_climate_action ~ period, data = df_climate_temporal %>% filter(is_aca == 0))
+
+# Print results
+print(t_test_climate_temporal_users)
+
+
+# Perform t-test comparing pre-pandemic vs post-pandemic support for economic collectivism among academics
+t_test_econ_temporal_users <- t.test(stance_econ_collectivism ~ period, data = df_climate_temporal %>% filter(is_aca == 0))
+
+# Print results
+print(t_test_econ_temporal_users)
+
+```
+
+## Calculate the mean, standard deviation (SD), and 95% confidence intervals (CIs) for various expressions
+
+```{r}
+# Function to calculate mean, sd, and 95% CI
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  
+  # Sample size
+  n <- length(var_data)
+  
+  # Standard error
+  se_val <- sd_val / sqrt(n)
+  
+  # 95% confidence intervals
+  error_margin <- qt(0.975, df = n - 1) * se_val
+  ci_lower <- mean_val - error_margin
+  ci_upper <- mean_val + error_margin
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Split the data into academics and general users
+df_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+df_general_users <- us_aca_users_comb %>% filter(is_aca == 0)
+
+# Variables of interest
+variables <- c("stance_climate_action", "pro_techno_prop", "pro_beh_prop")
+
+# Calculate statistics for academics
+cat("Academics:\n")
+for (variable in variables) {
+  stats <- calculate_stats_base_r(df_academics, variable)
+  print(paste("Mean for", variable, ": ", stats$mean))
+  print(paste("SD for", variable, ": ", stats$sd))
+  print(paste("95% CI for", variable, ": (", stats$ci_lower, ", ", stats$ci_upper, ")"))
+}
+
+# Calculate statistics for general users
+cat("\nGeneral Users:\n")
+for (variable in variables) {
+  stats <- calculate_stats_base_r(df_general_users, variable)
+  print(paste("Mean for", variable, ": ", stats$mean))
+  print(paste("SD for", variable, ": ", stats$sd))
+  print(paste("95% CI for", variable, ": (", stats$ci_lower, ", ", stats$ci_upper, ")"))
+}
+
+# Calculate ratios between academics and general users for stance_climate_action, pro_techno_prop, and pro_beh_prop
+calculate_ratio <- function(data1, data2, variable) {
+  mean1 <- mean(data1[[variable]], na.rm = TRUE)
+  mean2 <- mean(data2[[variable]], na.rm = TRUE)
+  
+  ratio <- mean1 / mean2
+  ratio
+}
+
+cat("\nRatios (Academics vs General Users):\n")
+for (variable in variables) {
+  ratio <- calculate_ratio(df_academics, df_general_users, variable)
+  print(paste("Ratio for", variable, ": ", ratio))
+}
+
+
+```
+
+## Ratio of Difference between Academics and Non-Academics
+
+Cultural Liberalism and Economic Collectivism
+```{r}
+## Extended Data Figure: Cultural Liberalism vs. Economic Collectivism (Academics vs General Users)
+## This chunk calculates mean stance, 95% CIs, ratios, and performs t-tests 
+## to provide statistical evidence for the claim that U.S. academics show 
+## 6.2x higher cultural liberalism and 23.3x higher economic collectivism than U.S. general users.
+
+# Filter the dataset to keep only U.S. academics and U.S. general users
+df_us_academics <- us_aca_users_comb %>%
+  filter(is_aca == 1)
+
+df_us_users <- us_aca_users_comb %>%
+  filter(is_aca == 0)
+
+# 1. Calculate mean stance, SD, 95% CIs for cultural liberalism and economic collectivism in each group
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    n = n,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+variables_econ <- c("stance_cultural_liberalism", "stance_econ_collectivism")
+
+cat("==== U.S. Academics vs. U.S. General Users: Cultural Liberalism & Economic Collectivism ====\n\n")
+
+for (var in variables_econ) {
+  cat(paste0("Variable: ", var, "\n"))
+  
+  # Stats for academics
+  stats_acad <- calculate_stats_base_r(df_us_academics, var)
+  # Stats for general users
+  stats_users <- calculate_stats_base_r(df_us_users, var)
+  
+  cat("U.S. Academics:\n",
+      "Mean:", round(stats_acad$mean, 4),
+      "SD:", round(stats_acad$sd, 4),
+      "N:", stats_acad$n,
+      "95% CI: (", round(stats_acad$ci_lower, 4), ",", round(stats_acad$ci_upper, 4), ")\n")
+  
+  cat("U.S. General Users:\n",
+      "Mean:", round(stats_users$mean, 4),
+      "SD:", round(stats_users$sd, 4),
+      "N:", stats_users$n,
+      "95% CI: (", round(stats_users$ci_lower, 4), ",", round(stats_users$ci_upper, 4), ")\n")
+  
+  # 2. Calculate ratio (academics vs. general users)
+  ratio <- stats_acad$mean / stats_users$mean
+  cat("Ratio (Academics / General Users):", round(ratio, 3), "\n")
+  
+  # 3. Perform a two-sample t-test 
+  #    (Note: This tests whether there's a significant difference in means)
+  ttest_res <- t.test(df_us_academics[[var]], df_us_users[[var]], var.equal = FALSE)
+  cat("t-test Results:\n",
+      "t =", round(ttest_res$statistic, 3),
+      "df =", round(ttest_res$parameter, 2),
+      "p =", formatC(ttest_res$p.value, format="f", digits=4),
+      "Mean Diff =", round(ttest_res$estimate[1] - ttest_res$estimate[2], 4),
+      "\n\n")
+}
+
+```
+
+Climate Action
+```{r}
+# Calculate mean stance for academics and general users
+mean_academics_climate <- mean(df_us_academics$stance_climate_action, na.rm = TRUE)
+mean_users_climate <- mean(df_us_users$stance_climate_action, na.rm = TRUE)
+ratio_academics_users <- mean_academics_climate / mean_users_climate
+
+# Perform t-test
+ttest_academics_vs_users_climate <- t.test(df_us_academics$stance_climate_action,
+                                           df_us_users$stance_climate_action,
+                                           var.equal = FALSE, na.action = na.omit)
+
+# Calculate CI for academics' mean
+calculate_stats_base_r <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(
+    mean = mean_val,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+stats_academics_climate <- calculate_stats_base_r(df_us_academics, "stance_climate_action")
+stats_users_climate <- calculate_stats_base_r(df_us_users, "stance_climate_action")
+
+list(
+  ratio = ratio_academics_users,
+  t_test = ttest_academics_vs_users_climate,
+  academics_stats = stats_academics_climate,
+  users_stats = stats_users_climate
+)
+
+```
+
+Check assumptions and redo tests
+```{r}
+
+# Function to assess normality
+check_normality_stats <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  skewness_val <- skewness(var_data)
+  kurtosis_val <- kurtosis(var_data)
+  
+  list(
+    skewness = skewness_val,
+    kurtosis = kurtosis_val
+  )
+}
+
+# Function for variance homogeneity check
+check_variance_homogeneity <- function(data_academics, data_users, variable) {
+  var_academics <- data_academics[[variable]]
+  var_users <- data_users[[variable]]
+  
+  # Combine data for Levene's test
+  combined_data <- data.frame(
+    value = c(var_academics, var_users),
+    group = c(rep("Academics", length(var_academics)), rep("Users", length(var_users)))
+  )
+  
+  levene_test <- leveneTest(value ~ group, data = combined_data)
+  
+  list(
+    F_statistic = levene_test$"F value"[1],
+    df1 = levene_test$Df[1],
+    df2 = levene_test$Df[2],
+    p_value = levene_test$"Pr(>F)"[1]
+  )
+}
+
+# Function to calculate mean, SD, CI, and sample size
+calculate_stats <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(
+    mean = mean_val,
+    sd = sd_val,
+    n = n,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+}
+
+# Variables to analyze
+variables <- c("stance_climate_action", "stance_cultural_liberalism", "stance_econ_collectivism")
+
+# Iterate through variables for academics and users
+for (var in variables) {
+  cat("\n=== Variable:", var, "===\n")
+  
+  # Calculate normality stats
+  normality_academics <- check_normality_stats(df_us_academics, var)
+  normality_users <- check_normality_stats(df_us_users, var)
+  
+  cat("Academics - Skewness:", round(normality_academics$skewness, 3), 
+      ", Kurtosis:", round(normality_academics$kurtosis, 3), "\n")
+  cat("Users - Skewness:", round(normality_users$skewness, 3), 
+      ", Kurtosis:", round(normality_users$kurtosis, 3), "\n")
+  
+  # Check variance homogeneity
+  variance_homogeneity <- check_variance_homogeneity(df_us_academics, df_us_users, var)
+  cat("Levene's Test - F(", variance_homogeneity$df1, ", ", variance_homogeneity$df2, ") = ", 
+      round(variance_homogeneity$F_statistic, 3), 
+      ", p =", round(variance_homogeneity$p_value, 4), "\n")
+  
+  # Calculate descriptive stats
+  stats_academics <- calculate_stats(df_us_academics, var)
+  stats_users <- calculate_stats(df_us_users, var)
+  
+  cat("Academics: Mean =", round(stats_academics$mean, 4), 
+      ", SD =", round(stats_academics$sd, 4), 
+      ", N =", stats_academics$n, 
+      ", 95% CI =", sprintf("[%.4f, %.4f]", stats_academics$ci_lower, stats_academics$ci_upper), "\n")
+  
+  cat("Users: Mean =", round(stats_users$mean, 4), 
+      ", SD =", round(stats_users$sd, 4), 
+      ", N =", stats_users$n, 
+      ", 95% CI =", sprintf("[%.4f, %.4f]", stats_users$ci_lower, stats_users$ci_upper), "\n")
+  
+  # Perform Welch's t-test
+  t_test <- t.test(
+    df_us_academics[[var]], 
+    df_us_users[[var]], 
+    var.equal = FALSE
+  )
+  cat("Welch's t-test - t(", round(t_test$parameter, 2), ") = ", round(t_test$statistic, 3), 
+      ", p =", formatC(t_test$p.value, format = "f", digits = 4), 
+      ", Mean Difference =", round(t_test$estimate[1] - t_test$estimate[2], 4), "\n")
+  
+  # Calculate Cohen's d
+  cohen_d <- cohen.d(df_us_academics[[var]], df_us_users[[var]])
+  cat("Cohen's d:", round(cohen_d$estimate, 3), "\n")
+}
+
+```
+
+
+High vs Low Reach with Expertise, rel. to general US users
+```{r}
+# Function for descriptive statistics
+calculate_descriptive_stats <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  list(
+    mean = mean(var_data),
+    sd = sd(var_data),
+    n = length(var_data),
+    se = sd(var_data) / sqrt(length(var_data)),
+    ci_lower = mean(var_data) - qt(0.975, df = length(var_data) - 1) * sd(var_data) / sqrt(length(var_data)),
+    ci_upper = mean(var_data) + qt(0.975, df = length(var_data) - 1) * sd(var_data) / sqrt(length(var_data)),
+    skewness = skewness(var_data),
+    kurtosis = kurtosis(var_data)
+  )
+}
+
+# Function for variance homogeneity check
+check_variance_homogeneity <- function(group1, group2) {
+  combined_data <- data.frame(
+    value = c(group1, group2),
+    group = c(rep("Group1", length(group1)), rep("Group2", length(group2)))
+  )
+  
+  levene_out <- leveneTest(value ~ group, data = combined_data)
+  
+  list(
+    f_value = levene_out$`F value`[1],
+    df1 = levene_out$Df[1],
+    df2 = levene_out$Df[2],
+    p_value = levene_out$`Pr(>F)`[1]
+  )
+}
+
+# Comparison function
+compare_with_users <- function(data_academics, data_users, variable, group_label) {
+  # Descriptive statistics
+  stats_academics <- calculate_descriptive_stats(data_academics, variable)
+  stats_users <- calculate_descriptive_stats(data_users, variable)
+  
+  # Variance homogeneity
+  levene_results <- check_variance_homogeneity(
+    group1 = data_academics[[variable]],
+    group2 = data_users[[variable]]
+  )
+  
+  # Welch's t-test
+  t_test_results <- t.test(
+    data_academics[[variable]],
+    data_users[[variable]],
+    var.equal = FALSE,
+    na.action = na.omit
+  )
+  
+  # Cohen's d
+  cohen_d <- cohen.d(
+    data_academics[[variable]],
+    data_users[[variable]]
+  )$estimate
+  
+  # Print results
+  cat("=== Comparison:", group_label, "===\n")
+  cat("Group 1 (Academics): N =", stats_academics$n, ", Mean =", round(stats_academics$mean, 4),
+      ", SD =", round(stats_academics$sd, 4), ", 95% CI = [", round(stats_academics$ci_lower, 4),
+      ",", round(stats_academics$ci_upper, 4), "]\n")
+  cat("Skewness =", round(stats_academics$skewness, 3), ", Kurtosis =", round(stats_academics$kurtosis, 3), "\n")
+  
+  cat("Group 2 (Users): N =", stats_users$n, ", Mean =", round(stats_users$mean, 4),
+      ", SD =", round(stats_users$sd, 4), ", 95% CI = [", round(stats_users$ci_lower, 4),
+      ",", round(stats_users$ci_upper, 4), "]\n")
+  cat("Skewness =", round(stats_users$skewness, 3), ", Kurtosis =", round(stats_users$kurtosis, 3), "\n")
+  
+  cat("Levene’s Test: F(", levene_results$df1, ",", levene_results$df2, ") =",
+      round(levene_results$f_value, 2), ", p =", formatC(levene_results$p_value, format = "f", digits = 4), "\n")
+  
+  cat("Welch’s t-test: t(", round(t_test_results$parameter, 2), ") =", round(t_test_results$statistic, 3),
+      ", p =", formatC(t_test_results$p.value, format = "f", digits = 4),
+      ", Mean Diff =", round(t_test_results$estimate[1] - t_test_results$estimate[2], 4), "\n")
+  
+  cat("Cohen’s d:", round(cohen_d, 3), "\n\n")
+}
+
+# Filter groups
+df_lc_hr_academics <- us_aca_users_comb %>%
+  filter(is_aca == 1, is_US == 1, type_H_reach_L_cred == 1)
+
+df_lr_climate_experts <- us_aca_users_comb %>%
+  filter(is_aca == 1, is_US == 1, type_L_reach_H_exp_climate == 1)
+
+df_us_users <- us_aca_users_comb %>%
+  filter(is_aca == 0)
+
+# Perform comparisons
+compare_with_users(df_lc_hr_academics, df_us_users, "stance_climate_action", "Low-credibility, high-reach academics vs. U.S. users")
+compare_with_users(df_lr_climate_experts, df_us_users, "stance_climate_action", "Low-reach, high-credibility experts vs. U.S. users")
+
+```
+
+Academics overall vs. general U.S. users for egocentrism, emotionality, and toxicity
+```{r}
+# Academics overall vs. general U.S. users for egocentrism, emotionality, and toxicity
+#    to show, e.g., "Academics exhibit 70% of the egocentrism of general population"
+
+vars_beh <- c("egocentrism", "emotionality", "toxicity")
+
+cat("=== Academics Overall vs. General U.S. Users: Egocentrism, Emotionality, Toxicity ===\n\n")
+
+for (v in vars_beh) {
+  cat("Variable:", v, "\n")
+  
+  mean_acad <- mean(df_us_academics[[v]], na.rm = TRUE)
+  mean_users <- mean(df_us_users[[v]], na.rm = TRUE)
+  
+  # ratio
+  ratio_val <- mean_acad / mean_users
+  
+  # t-test
+  ttest_beh <- t.test(df_us_academics[[v]], df_us_users[[v]], var.equal = FALSE, na.action = na.omit)
+  
+  cat("Mean (Academics):", round(mean_acad, 4), "\n")
+  cat("Mean (U.S. Users):", round(mean_users, 4), "\n")
+  cat("Ratio (Academics / U.S. Users):", round(ratio_val, 3), "\n")
+  cat("t-test results:\n",
+      " t =", round(ttest_beh$statistic, 3),
+      " df =", round(ttest_beh$parameter, 2),
+      " p =", formatC(ttest_beh$p.value, format="f", digits=4),
+      " Mean Diff =", round(ttest_beh$estimate[1] - ttest_beh$estimate[2], 4),
+      "\n\n")
+}
+
+```
+
+Statistical Comparisons for Emotionality: Academics vs General Population
+```{r}
+# Function to check normality
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = moments::skewness(x),
+    kurtosis = moments::kurtosis(x)
+  )
+}
+
+# Function to check variance homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  lv_test <- car::leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# Function to compare two groups
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+################################################################################
+## Emotionality Comparisons
+################################################################################
+
+# Filter data for U.S. Twitter population and academics
+df_us_users <- us_aca_users_comb %>% filter(is_aca == 0)
+df_us_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+
+# Compare emotionality between academics and U.S. Twitter users
+res_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "emotionality",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # General Twitter Users
+)
+print(res_academics_vs_users)
+
+# Compare emotionality between U.S.-based and non-U.S.-based academics
+res_US_vs_nonUS <- compare_two_groups(
+  df = df_us_academics,
+  outcome = "emotionality",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_US_vs_nonUS)
+
+```
+
+## Identifying trends in stances
+
+cultural and economic stances over time
+```{r}
+# Filter data for relevant years and progressive stances
+df_temporal <- repl_df %>%
+  filter(year(Date) >= 2016 & year(Date) <= 2022) %>%
+  select(Date, stance_cultural_liberalism, stance_econ_collectivism)
+
+# Add a categorical variable to denote pre-2022 and 2022+
+df_temporal <- df_temporal %>%
+  mutate(period = ifelse(year(Date) < 2022, "Pre-2022", "2022+"))
+
+# 1. Linear regression for cultural and economic stances over time
+lm_cultural <- lm(stance_cultural_liberalism ~ Date, data = df_temporal)
+lm_economic <- lm(stance_econ_collectivism ~ Date, data = df_temporal)
+
+# Summarize results
+summary(lm_cultural)
+summary(lm_economic)
+
+```
+
+Declines in Cultural Liberalism Since 2022 
+Test for U.S. vs. Non-U.S. differences and peak in 2020–2022
+```{r}
+# Filter data for relevant years and fields
+df_fields <- repl_df %>%
+  filter(year(Date) >= 2016 & year(Date) <= 2022) %>%
+  mutate(year=year(Date)) %>%
+  select(Date, year, stance_cultural_liberalism, is_humanities, is_stem, is_soc_sci, is_US)
+
+# Add a categorical variable to denote pre-2022 and 2022+
+df_fields <- df_fields %>%
+  mutate(period = ifelse(year < 2022, "Pre-2022", "2022+"))
+
+# 1. Test for declines in cultural liberalism since 2022 across fields
+fields <- c("is_humanities", "is_stem", "is_soc_sci")
+
+cat("=== Declines in Cultural Liberalism Since 2022 ===\n\n")
+for (field in fields) {
+  cat("Field:", field, "\n")
+  
+  # Filter for each field
+  df_field <- df_fields %>% filter(!!rlang::sym(field) == 1)
+  
+  # Perform a t-test comparing pre-2022 and 2022+ periods
+  ttest_field <- t.test(
+    stance_cultural_liberalism ~ period,
+    data = df_field,
+    var.equal = FALSE
+  )
+  
+  # Print results
+  cat("t-test results:\n",
+      " t =", round(ttest_field$statistic, 3),
+      " df =", round(ttest_field$parameter, 2),
+      " p =", formatC(ttest_field$p.value, format = "f", digits = 4),
+      " Mean Diff =", round(ttest_field$estimate[1] - ttest_field$estimate[2], 4),
+      "\n\n")
+}
+
+# 2. Test for U.S. vs. Non-U.S. differences and peak in 2020–2022
+
+cat("=== U.S. vs. Non-U.S. Differences in Cultural Liberalism ===\n\n")
+
+# Filter for U.S. and non-U.S. academics
+df_us_vs_non_us <- df_fields %>%
+  filter(year >= 2016 & year <= 2022) %>%
+  filter(!is.na(is_US))
+
+# Add a categorical variable for the "2020–2022" period
+df_us_vs_non_us <- df_us_vs_non_us %>%
+  mutate(period_2020_2022 = ifelse(year >= 2020 & year <= 2022, "2020–2022", "Other"))
+
+# Perform t-test comparing U.S. and non-U.S. academics for cultural liberalism
+ttest_us_vs_non_us <- t.test(
+  stance_cultural_liberalism ~ is_US,
+  data = df_us_vs_non_us,
+  var.equal = FALSE
+)
+
+# Perform t-test for differences in 2020–2022
+ttest_us_2020_2022 <- t.test(
+  stance_cultural_liberalism ~ is_US,
+  data = df_us_vs_non_us %>% filter(period_2020_2022 == "2020–2022"),
+  var.equal = FALSE
+)
+
+# Print results
+cat("Overall U.S. vs. Non-U.S.:\n",
+    " t =", round(ttest_us_vs_non_us$statistic, 3),
+    " df =", round(ttest_us_vs_non_us$parameter, 2),
+    " p =", formatC(ttest_us_vs_non_us$p.value, format = "f", digits = 4),
+    " Mean Diff =", round(ttest_us_vs_non_us$estimate[1] - ttest_us_vs_non_us$estimate[2], 4),
+    "\n\n")
+
+cat("2020–2022 U.S. vs. Non-U.S.:\n",
+    " t =", round(ttest_us_2020_2022$statistic, 3),
+    " df =", round(ttest_us_2020_2022$parameter, 2),
+    " p =", formatC(ttest_us_2020_2022$p.value, format = "f", digits = 4),
+    " Mean Diff =", round(ttest_us_2020_2022$estimate[1] - ttest_us_2020_2022$estimate[2], 4),
+    "\n\n")
+
+```
+
+statistical tests for normality/variance
+```{r}
+################################################################################
+## HELPER FUNCTIONS
+################################################################################
+
+# (A) Normality check: returns skewness & kurtosis for residuals or numeric vector
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's test for variance homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  # Perform Levene's test
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Compare two groups using Welch’s t-test and Cohen's d
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+################################################################################
+## Temporal Trends and Subgroup Comparisons
+################################################################################
+
+# Prepare the temporal dataset
+df_temporal <- repl_df %>%
+  filter(year(Date) >= 2016 & year(Date) <= 2022) %>%
+  select(Date, stance_cultural_liberalism, stance_econ_collectivism)
+
+# Linear regression for temporal trends
+lm_cultural <- lm(stance_cultural_liberalism ~ Date, data = df_temporal)
+lm_economic <- lm(stance_econ_collectivism ~ Date, data = df_temporal)
+
+# Summarize linear regression results
+summary_cultural <- summary(lm_cultural)
+summary_economic <- summary(lm_economic)
+
+# Check residual normality for temporal trends
+normality_cultural <- check_normality(residuals(lm_cultural))
+normality_economic <- check_normality(residuals(lm_economic))
+
+cat("=== Temporal Trends: Residual Diagnostics ===\n")
+cat("Cultural Liberalism Residuals: Skewness =", normality_cultural$skewness, ", Kurtosis =", normality_cultural$kurtosis, "\n")
+cat("Economic Collectivism Residuals: Skewness =", normality_economic$skewness, ", Kurtosis =", normality_economic$kurtosis, "\n")
+
+################################################################################
+## Subgroup Comparisons: Pre-2022 vs Post-2022
+################################################################################
+
+# Prepare the field-specific dataset
+df_fields <- repl_df %>%
+  filter(year(Date) >= 2016 & year(Date) <= 2022) %>%
+  mutate(period = ifelse(year(Date) < 2022, "Pre-2022", "2022+"))
+
+# Compare pre-2022 vs post-2022 for cultural liberalism across fields
+fields <- c("is_humanities", "is_stem", "is_soc_sci")
+for (field in fields) {
+  field_label <- gsub("is_", "", field)
+  res <- compare_two_groups(
+    df = df_fields,
+    outcome = "stance_cultural_liberalism",
+    groupvar = "period",
+    label_group1 = "Pre-2022",
+    label_group2 = "2022+"
+  )
+  cat("=== Comparison for Cultural Liberalism: Field =", field_label, "===\n")
+  print(res)
+}
+
+################################################################################
+## Regional Differences
+################################################################################
+
+# Compare U.S. vs. Non-U.S. academics for cultural liberalism
+res_us_vs_nonus <- compare_two_groups(
+  df = repl_df,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_us_vs_nonus)
+
+# Compare U.S. vs. Non-U.S. academics during 2020–2022
+df_2020_2022 <- df_fields %>%
+  filter(year >= 2020 & year <= 2022)
+
+res_us_vs_nonus_2020 <- compare_two_groups(
+  df = df_2020_2022,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_US",
+  label_group1 = 0,  # Non-U.S.
+  label_group2 = 1   # U.S.-based
+)
+print(res_us_vs_nonus_2020)
+
+```
+
+## Average Toxicity Levels
+
+```{r}
+# Filter data for academics and general U.S. users
+df_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+df_users <- us_aca_users_comb %>% filter(is_aca == 0)
+
+# Function to calculate mean and 95% confidence interval
+calculate_mean_ci <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]  # Remove NA values
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)  # 95% CI critical value
+  
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(mean = mean_val, ci_lower = ci_lower, ci_upper = ci_upper)
+}
+
+# Calculate for toxicity
+toxicity_academics <- calculate_mean_ci(df_academics, "toxicity")
+toxicity_users <- calculate_mean_ci(df_users, "toxicity")
+
+# Print results
+cat("Academics: Mean =", round(toxicity_academics$mean, 4),
+    "95% CI = [", round(toxicity_academics$ci_lower, 4), ",", round(toxicity_academics$ci_upper, 4), "]\n")
+
+cat("General Users: Mean =", round(toxicity_users$mean, 4),
+    "95% CI = [", round(toxicity_users$ci_lower, 4), ",", round(toxicity_users$ci_upper, 4), "]\n")
+
+```
+
+## Climate Narrative Differences
+test
+```{r}
+# Calculate mean and 95% CI for behavioral adjustment and techno-optimism
+calculate_mean_ci <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]  # Remove NA values
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)  # 95% CI critical value
+  
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(mean = mean_val, ci_lower = ci_lower, ci_upper = ci_upper)
+}
+
+# Calculate statistics for behavioral adjustment and techno-optimism
+stats_behavioral <- calculate_mean_ci(repl_df, "pro_beh_prop")
+stats_techno <- calculate_mean_ci(repl_df, "pro_techno_prop")
+
+# Paired t-test to compare means
+t_test_comparison <- t.test(repl_df$pro_beh_prop, repl_df$pro_techno_prop, paired = TRUE)
+
+# Print results
+cat("Behavioral Adjustment:\n",
+    "Mean =", round(stats_behavioral$mean, 4),
+    "95% CI = [", round(stats_behavioral$ci_lower, 4), ",", round(stats_behavioral$ci_upper, 4), "]\n")
+
+cat("Techno-Optimism:\n",
+    "Mean =", round(stats_techno$mean, 4),
+    "95% CI = [", round(stats_techno$ci_lower, 4), ",", round(stats_techno$ci_upper, 4), "]\n")
+
+cat("Paired t-test:\n",
+    "t =", round(t_test_comparison$statistic, 3),
+    "df =", round(t_test_comparison$parameter, 2),
+    "p =", formatC(t_test_comparison$p.value, format = "f", digits = 4),
+    "Mean Diff =", round(t_test_comparison$estimate, 4), "\n")
+
+```
+
+assumptions
+```{r}
+
+# Function for calculating skewness and kurtosis
+check_normality_single <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  list(
+    skewness = skewness(var_data),
+    kurtosis = kurtosis(var_data)
+  )
+}
+
+# Check normality
+normality_behavioral <- check_normality_single(repl_df, "pro_beh_prop")
+normality_techno <- check_normality_single(repl_df, "pro_techno_prop")
+
+# Function for variance homogeneity (Levene's Test)
+check_variance_homogeneity <- function(data, variable1, variable2) {
+  combined_data <- data.frame(
+    value = c(data[[variable1]], data[[variable2]]),
+    group = c(rep("Behavioral", nrow(data)), rep("Techno", nrow(data)))
+  )
+  
+  levene_test <- leveneTest(value ~ group, data = combined_data)
+  
+  list(
+    F_value = levene_test$"F value"[1],
+    df1 = levene_test$Df[1],
+    df2 = levene_test$Df[2],
+    p_value = levene_test$"Pr(>F)"[1]
+  )
+}
+
+# Check variance homogeneity
+variance_homogeneity <- check_variance_homogeneity(repl_df, "pro_beh_prop", "pro_techno_prop")
+
+# Calculate means, SDs, and confidence intervals
+stats_behavioral <- calculate_mean_ci(repl_df, "pro_beh_prop")
+stats_techno <- calculate_mean_ci(repl_df, "pro_techno_prop")
+
+# Paired t-test
+t_test_comparison <- t.test(repl_df$pro_beh_prop, repl_df$pro_techno_prop, paired = TRUE)
+
+# Cohen's d for paired t-test
+mean_diff <- t_test_comparison$estimate
+pooled_sd <- sqrt((stats_behavioral$sd^2 + stats_techno$sd^2) / 2)
+cohen_d <- mean_diff / pooled_sd
+
+# Print results
+cat("Behavioral Adjustment:\n",
+    "Mean =", round(stats_behavioral$mean, 4),
+    "95% CI = [", round(stats_behavioral$ci_lower, 4), ",", round(stats_behavioral$ci_upper, 4), "]\n")
+cat("Techno-Optimism:\n",
+    "Mean =", round(stats_techno$mean, 4),
+    "95% CI = [", round(stats_techno$ci_lower, 4), ",", round(stats_techno$ci_upper, 4), "]\n")
+cat("Normality - Behavioral Adjustment:\n",
+    "Skewness =", round(normality_behavioral$skewness, 3),
+    "Kurtosis =", round(normality_behavioral$kurtosis, 3), "\n")
+cat("Normality - Techno-Optimism:\n",
+    "Skewness =", round(normality_techno$skewness, 3),
+    "Kurtosis =", round(normality_techno$kurtosis, 3), "\n")
+cat("Variance Homogeneity (Levene's Test):\n",
+    "F(", variance_homogeneity$df1, ",", variance_homogeneity$df2, ") =",
+    round(variance_homogeneity$F_value, 2),
+    ", p =", formatC(variance_homogeneity$p_value, format = "f", digits = 4), "\n")
+cat("Paired t-test:\n",
+    "t =", round(t_test_comparison$statistic, 3),
+    "df =", t_test_comparison$parameter,
+    "p =", formatC(t_test_comparison$p.value, format = "f", digits = 4),
+    "Mean Diff =", round(mean_diff, 4), "\n")
+cat("Cohen's d:", round(cohen_d, 3), "\n")
+
+```
+
+
+Statistical comparison of academics vs. U.S. Twitter population
+```{r}
+# Enhanced Statistical Comparison of Academics vs. U.S. Twitter Population
+
+# Function to calculate descriptive statistics
+calculate_stats <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  mean_val <- mean(var_data)
+  sd_val <- sd(var_data)
+  n <- length(var_data)
+  se_val <- sd_val / sqrt(n)
+  crit_val <- qt(0.975, df = n - 1)  # 95% CI critical value
+  
+  ci_lower <- mean_val - crit_val * se_val
+  ci_upper <- mean_val + crit_val * se_val
+  
+  list(mean = mean_val, sd = sd_val, ci_lower = ci_lower, ci_upper = ci_upper, n = n)
+}
+
+# Function to assess normality
+check_normality <- function(data, variable) {
+  var_data <- data[[variable]]
+  var_data <- var_data[!is.na(var_data)]
+  
+  skewness_val <- skewness(var_data)
+  kurtosis_val <- kurtosis(var_data)
+  
+  list(skewness = skewness_val, kurtosis = kurtosis_val)
+}
+
+# Function to check variance homogeneity
+check_variance_homogeneity <- function(data_academics, data_users, variable) {
+  var_academics <- data_academics[[variable]]
+  var_users <- data_users[[variable]]
+  
+  combined_data <- data.frame(
+    value = c(var_academics, var_users),
+    group = c(rep("Academics", length(var_academics)), rep("Users", length(var_users)))
+  )
+  
+  levene_test <- leveneTest(value ~ group, data = combined_data)
+  
+  list(
+    F_statistic = levene_test$"F value"[1],
+    df1 = levene_test$Df[1],
+    df2 = levene_test$Df[2],
+    p_value = levene_test$"Pr(>F)"[1]
+  )
+}
+
+# Filter data for academics and general users
+df_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+df_general_users <- us_aca_users_comb %>% filter(is_aca == 0)
+
+# Variables to analyze
+variables <- c("pro_techno_prop", "pro_beh_prop")
+
+# Loop through variables
+for (variable in variables) {
+  cat("=== Variable:", variable, "===\n")
+  
+  # Calculate descriptive stats for academics and general users
+  stats_acad <- calculate_stats(df_academics, variable)
+  stats_users <- calculate_stats(df_general_users, variable)
+  
+  # Normality checks
+  normality_acad <- check_normality(df_academics, variable)
+  normality_users <- check_normality(df_general_users, variable)
+  
+  # Variance homogeneity check
+  variance_test <- check_variance_homogeneity(df_academics, df_general_users, variable)
+  
+  # Perform Welch's t-test
+  ttest_result <- t.test(
+    df_academics[[variable]], 
+    df_general_users[[variable]], 
+    var.equal = FALSE
+  )
+  
+  # Calculate Cohen's d
+  cohen_d <- cohen.d(df_academics[[variable]], df_general_users[[variable]], na.rm = TRUE)
+  
+  # Report results
+  cat("Academics:\n",
+      "Mean =", round(stats_acad$mean, 4),
+      "SD =", round(stats_acad$sd, 4),
+      "N =", stats_acad$n,
+      "95% CI =", sprintf("[%.4f, %.4f]", stats_acad$ci_lower, stats_acad$ci_upper), "\n")
+  
+  cat("General Users:\n",
+      "Mean =", round(stats_users$mean, 4),
+      "SD =", round(stats_users$sd, 4),
+      "N =", stats_users$n,
+      "95% CI =", sprintf("[%.4f, %.4f]", stats_users$ci_lower, stats_users$ci_upper), "\n")
+  
+  cat("Normality - Academics:\n",
+      "Skewness =", round(normality_acad$skewness, 3),
+      "Kurtosis =", round(normality_acad$kurtosis, 3), "\n")
+  
+  cat("Normality - Users:\n",
+      "Skewness =", round(normality_users$skewness, 3),
+      "Kurtosis =", round(normality_users$kurtosis, 3), "\n")
+  
+  cat("Variance Homogeneity (Levene's Test):\n",
+      "F(", variance_test$df1, ",", variance_test$df2, ") =",
+      round(variance_test$F_statistic, 2), 
+      ", p =", formatC(variance_test$p_value, format = "f", digits = 4), "\n")
+  
+  cat("Welch's t-test:\n",
+      "t(", round(ttest_result$parameter, 2), ") =",
+      round(ttest_result$statistic, 3),
+      ", p =", formatC(ttest_result$p.value, format = "f", digits = 4), 
+      ", Mean Diff =", round(ttest_result$estimate[1] - ttest_result$estimate[2], 4), "\n")
+  
+  cat("Cohen's d:", round(cohen_d$estimate, 3), "\n\n")
+}
+
+```
+
+
+
+## All statistical comparisons relevant to Figure 6 findings
+
+```{r}
+################################################################################
+## Statistical Comparisons for Academic and General Twitter Users
+################################################################################
+
+# (A) Function for Normality Checks
+check_normality <- function(x) {
+  x <- x[!is.na(x)]
+  list(
+    skewness = skewness(x),
+    kurtosis = kurtosis(x)
+  )
+}
+
+# (B) Levene's Test for Variance Homogeneity
+check_variance_homogeneity <- function(df, outcome, groupvar) {
+  tmp <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]]))
+  
+  tmp[[groupvar]] <- factor(tmp[[groupvar]])
+  
+  lv_test <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = tmp)
+  
+  list(
+    f_value = lv_test$`F value`[1],
+    df1 = lv_test$Df[1],
+    df2 = lv_test$Df[2],
+    p_value = lv_test$`Pr(>F)`[1]
+  )
+}
+
+# (C) Function to Compare Two Groups
+compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2) {
+  sub_data <- df %>%
+    filter(!is.na(.data[[outcome]]), !is.na(.data[[groupvar]])) %>%
+    filter(.data[[groupvar]] %in% c(label_group1, label_group2))
+  
+  sub_data[[groupvar]] <- factor(sub_data[[groupvar]])
+  
+  x_group1 <- sub_data[sub_data[[groupvar]] == label_group1, outcome, drop = TRUE]
+  x_group2 <- sub_data[sub_data[[groupvar]] == label_group2, outcome, drop = TRUE]
+  
+  # Normality Checks
+  normality_g1 <- check_normality(x_group1)
+  normality_g2 <- check_normality(x_group2)
+  
+  # Levene's Test
+  levene_res <- check_variance_homogeneity(sub_data, outcome, groupvar)
+  
+  # Welch’s t-test
+  t_res <- t.test(
+    x = x_group1,
+    y = x_group2,
+    var.equal = FALSE
+  )
+  
+  # Cohen's d
+  d_res <- cohen.d(
+    formula = as.formula(paste0(outcome, " ~ ", groupvar)),
+    data = sub_data,
+    pooled = FALSE
+  )
+  
+  # Group Statistics
+  n_g1 <- length(x_group1)
+  n_g2 <- length(x_group2)
+  mean_g1 <- mean(x_group1, na.rm = TRUE)
+  mean_g2 <- mean(x_group2, na.rm = TRUE)
+  sd_g1 <- sd(x_group1, na.rm = TRUE)
+  sd_g2 <- sd(x_group2, na.rm = TRUE)
+  
+  ci_g1 <- c(
+    mean_g1 - qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1)),
+    mean_g1 + qt(0.975, df = n_g1 - 1) * (sd_g1 / sqrt(n_g1))
+  )
+  
+  ci_g2 <- c(
+    mean_g2 - qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2)),
+    mean_g2 + qt(0.975, df = n_g2 - 1) * (sd_g2 / sqrt(n_g2))
+  )
+  
+  list(
+    group1_label = label_group1,
+    group2_label = label_group2,
+    sample_sizes = c(n_g1, n_g2),
+    normality = list(group1 = normality_g1, group2 = normality_g2),
+    variance_test = levene_res,
+    t_test = t_res,
+    cohen_d = d_res$estimate,
+    group1_stats = list(mean = mean_g1, sd = sd_g1, ci = ci_g1),
+    group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
+  )
+}
+
+################################################################################
+## Comparisons Between Academics and U.S. Twitter Users
+################################################################################
+
+# Filter data for U.S. Twitter population and academics
+df_us_users <- us_aca_users_comb %>% filter(is_aca == 0)
+df_us_academics <- us_aca_users_comb %>% filter(is_aca == 1)
+
+# Egocentrism
+res_egocentrism_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "egocentrism",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_egocentrism_academics_vs_users)
+
+# Toxicity
+res_toxicity_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "toxicity",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_toxicity_academics_vs_users)
+
+# Emotionality
+res_emotionality_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "emotionality",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_emotionality_academics_vs_users)
+
+
+# climate_action
+res_climate_action_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "stance_climate_action",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_climate_action_academics_vs_users)
+
+
+# cultural_liberalism
+res_cultural_liberalism_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "stance_cultural_liberalism",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_cultural_liberalism_academics_vs_users)
+
+
+# econ_collectivism
+res_econ_collectivism_academics_vs_users <- compare_two_groups(
+  df = us_aca_users_comb,
+  outcome = "stance_econ_collectivism",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # U.S. Twitter Users
+)
+print(res_econ_collectivism_academics_vs_users)
+```
+Support for Climate Action and Economic Collectivism Pre- and Post-Pandemic
+```{r}
+
+# Function to check normality and variance assumptions
+check_normality_and_variance <- function(df, outcome, groupvar) {
+  # Subset data
+  x_group1 <- df[df[[groupvar]] == "Pre-pandemic", outcome, drop = TRUE]
+  x_group2 <- df[df[[groupvar]] == "Post-pandemic", outcome, drop = TRUE]
+  
+  # Normality checks
+  normality_g1 <- list(
+    skewness = skewness(x_group1, na.rm = TRUE),
+    kurtosis = kurtosis(x_group1, na.rm = TRUE)
+  )
+  normality_g2 <- list(
+    skewness = skewness(x_group2, na.rm = TRUE),
+    kurtosis = kurtosis(x_group2, na.rm = TRUE)
+  )
+  
+  # Levene's test
+  levene_res <- leveneTest(as.formula(paste0(outcome, " ~ ", groupvar)), data = df)
+  
+  list(
+    normality_group1 = normality_g1,
+    normality_group2 = normality_g2,
+    variance_test = list(
+      f_value = levene_res$`F value`[1],
+      df1 = levene_res$Df[1],
+      df2 = levene_res$Df[2],
+      p_value = levene_res$`Pr(>F)`[1]
+    )
+  )
+}
+
+# Prepare datasets for academics and general users
+df_temporal_academics <- us_aca_users_comb %>%
+  filter(is_aca == 1, year(Date) >= 2016 & year(Date) <= 2022) %>%
+  mutate(period = ifelse(year(Date) < 2020, "Pre-pandemic", "Post-pandemic"))
+
+df_temporal_users <- us_aca_users_comb %>%
+  filter(is_aca == 0, year(Date) >= 2016 & year(Date) <= 2022) %>%
+  mutate(period = ifelse(year(Date) < 2020, "Pre-pandemic", "Post-pandemic"))
+
+# Climate Action: Academics
+res_climate_action_academics <- compare_two_groups(
+  df = df_temporal_academics,
+  outcome = "stance_climate_action",
+  groupvar = "period",
+  label_group1 = "Pre-pandemic",
+  label_group2 = "Post-pandemic"
+)
+normality_climate_action_academics <- check_normality_and_variance(
+  df_temporal_academics, "stance_climate_action", "period"
+)
+print(res_climate_action_academics)
+print(normality_climate_action_academics)
+
+# Economic Collectivism: Academics
+res_economic_collectivism_academics <- compare_two_groups(
+  df = df_temporal_academics,
+  outcome = "stance_econ_collectivism",
+  groupvar = "period",
+  label_group1 = "Pre-pandemic",
+  label_group2 = "Post-pandemic"
+)
+normality_economic_collectivism_academics <- check_normality_and_variance(
+  df_temporal_academics, "stance_econ_collectivism", "period"
+)
+print(res_economic_collectivism_academics)
+print(normality_economic_collectivism_academics)
+
+# Climate Action: General U.S. Twitter Users
+res_climate_action_users <- compare_two_groups(
+  df = df_temporal_users,
+  outcome = "stance_climate_action",
+  groupvar = "period",
+  label_group1 = "Pre-pandemic",
+  label_group2 = "Post-pandemic"
+)
+normality_climate_action_users <- check_normality_and_variance(
+  df_temporal_users, "stance_climate_action", "period"
+)
+print(res_climate_action_users)
+print(normality_climate_action_users)
+
+# Economic Collectivism: General U.S. Twitter Users
+res_economic_collectivism_users <- compare_two_groups(
+  df = df_temporal_users,
+  outcome = "stance_econ_collectivism",
+  groupvar = "period",
+  label_group1 = "Pre-pandemic",
+  label_group2 = "Post-pandemic"
+)
+normality_economic_collectivism_users <- check_normality_and_variance(
+  df_temporal_users, "stance_econ_collectivism", "period"
+)
+print(res_economic_collectivism_users)
+print(normality_economic_collectivism_users)
+
+```
+
+
+Egocentrism in 2022 converging
+```{r}
+################################################################################
+## Egocentrism in 2022: Academics vs. General U.S. Twitter Population
+################################################################################
+
+# Filter data for the year 2022
+df_egocentrism_2022 <- us_aca_users_comb %>%
+  filter(year(Date) == 2022) %>%
+  select(is_aca, egocentrism)
+
+# Perform t-test for 2022
+res_egocentrism_2022 <- compare_two_groups(
+  df = df_egocentrism_2022,
+  outcome = "egocentrism",
+  groupvar = "is_aca",
+  label_group1 = 1,  # Academics
+  label_group2 = 0   # General U.S. Twitter Users
+)
+
+# Print results
+print(res_egocentrism_2022)
+
+# Additional Descriptive Statistics for 2022
+df_egocentrism_2022_stats <- df_egocentrism_2022 %>%
+  group_by(is_aca) %>%
+  summarise(
+    mean = mean(egocentrism, na.rm = TRUE),
+    sd = sd(egocentrism, na.rm = TRUE),
+    n = n(),
+    ci_lower = mean - qt(0.975, df = n() - 1) * (sd / sqrt(n())),
+    ci_upper = mean + qt(0.975, df = n() - 1) * (sd / sqrt(n()))
+  )
+
+# Print additional descriptive stats
+print(df_egocentrism_2022_stats)
+
+```
+
