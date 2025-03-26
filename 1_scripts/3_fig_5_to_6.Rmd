@@ -551,6 +551,12 @@ print(t_test_techno_us_vs_non_us)
 
 ```
 
+## sample sizes
+```{r}
+a<-us_aca_users_comb%>%count(indiv_id,is_aca)%>%count(is_aca)
+print(a)
+```
+
 ## General users in 2022
 ```{r}
 # Filter data for the year 2022 for Egocentrism

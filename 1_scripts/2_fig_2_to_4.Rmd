@@ -672,39 +672,40 @@ ggsave("fig4.pdf", p_all_fig4, width = 180 / 25.4, height = 180 / 25.4, device =
 
 # Extended Data Figures
 
+Sample of U.S. based academics
+```{r}
+repl_df_us<-repl_df %>%  filter(affiliation_country_code=="US") 
+```
 
 
 Extended Data Figure 2
 ```{r}
 # Map the function over each variable group and combine results
-stats_pol_main <- map_df(clim_var, ~calculate_stats(repl_df, .x))
+stats_pol_main <- map_df(clim_var, ~calculate_stats(repl_df_us, .x))
 
-stats_pol_is_female <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
-stats_pol_is_male <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+stats_pol_is_female <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(is_male==1), .x))
 
-stats_pol_is_stem <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
-stats_pol_is_soc_sci <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
-stats_pol_is_humanities <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+stats_pol_is_stem <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(is_humanities==1), .x))
 
-stats_pol_type_H_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_climate==1), .x))
-stats_pol_type_H_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_climate==1), .x))
-stats_pol_type_L_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_climate==1), .x))
-stats_pol_type_L_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_climate==1), .x))
+stats_pol_type_H_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_H_exp_climate==1), .x))
+stats_pol_type_H_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_L_exp_climate==1), .x))
+stats_pol_type_L_reach_H_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_H_exp_climate==1), .x))
+stats_pol_type_L_reach_L_exp_climate <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_L_exp_climate==1), .x))
 
-stats_pol_ranking_1_100 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100 <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1-100"), .x))
 stats_pol_ranking_1_100$Type <- "1-100"
 
-stats_pol_ranking_101_500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500 <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "101-500"), .x))
 stats_pol_ranking_101_500$Type <- "101-500"
 
-stats_pol_ranking_501_1500 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500 <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "501-1500"), .x))
 stats_pol_ranking_501_1500$Type <- "501-1500"
 
-stats_pol_ranking_1501 <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501 <- map_df(clim_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1501+"), .x))
 stats_pol_ranking_1501$Type <- "1501+"
-
-stats_pol_is_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
-stats_pol_isnt_US <- map_df(clim_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
 
 stats_pol_us_users <- map_df(clim_var, ~calculate_stats(users_df %>% filter(is_bot_50==0), .x))
 
@@ -737,12 +738,6 @@ stats_pol_rank <- bind_rows(
 )
 stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
 
-stats_pol_US <- bind_rows(
-  mutate(stats_pol_is_US, Type = "US"),
-  mutate(stats_pol_isnt_US, Type = "Non-US")
-)
-stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
-
 stats_pol_main$Type <- "Main"
 stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
 
@@ -754,10 +749,9 @@ stats_pol_field$Label <- factor(stats_pol_field$Term, levels = clim_var, labels 
 stats_pol_reach_by_exp_climate$Label <- factor(stats_pol_reach_by_exp_climate$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
 stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
 stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
-stats_pol_US$Label <- factor(stats_pol_US$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
 stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = clim_var, labels = topic_label_mapping[clim_var])
 
-stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_exp_climate, stats_pol_gender, stats_pol_rank, stats_pol_US, stats_pol_us_users)
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_exp_climate, stats_pol_gender, stats_pol_rank, stats_pol_us_users)
 
 # Extract the US users values for each Term
 us_users_values <- stats_pol_comb %>%
@@ -785,7 +779,6 @@ stats_pol_comb$Group <- with(stats_pol_comb, case_when(
   Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
   Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
   Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
-  Type %in% c("US", "Non-US") ~ "Country",
   Type %in% c("US users") ~ "US General Twitter Users"
 ))
 stats_pol_comb$Group <- factor(
@@ -796,7 +789,6 @@ stats_pol_comb$Group <- factor(
     "Fields",
     "Reach (R) by Expertise (E)",
     "University Rankings",
-    "Country",
     "US General Twitter Users"
   )
 )
@@ -807,7 +799,6 @@ stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
   "STEM", "Soc. Sciences", "Humanities",
   "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
   "1501+", "501-1500","101-500", "1-100",  
-  "Non-US", "US",
   "US users"
 ))
 
@@ -819,7 +810,6 @@ color_values <- c(
   "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
   "Low R-E" = "#999999", "Low R-Not E" = "gold2",
   "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
-  "US" = "red3", "Non-US" = "grey40",
   "US users" = "purple3"
 )
 
@@ -873,39 +863,36 @@ ggsave("edf2.pdf", p_all, device = cairo_pdf, width = 180 / 25.4, height = 180 /
 Extended Data Figure 3
 ```{r}
 # Map the function over each variable group and combine results
-stats_pol_main <- map_df(econ_var, ~calculate_stats(repl_df, .x))
+stats_pol_main <- map_df(econ_var, ~calculate_stats(repl_df_us, .x))
 
-stats_pol_is_female <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
-stats_pol_is_male <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+stats_pol_is_female <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(is_male==1), .x))
 
-stats_pol_is_stem <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
-stats_pol_is_soc_sci <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
-stats_pol_is_humanities <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+stats_pol_is_stem <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(is_humanities==1), .x))
 
-stats_pol_type_H_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_econ==1), .x))
-stats_pol_type_H_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_econ==1), .x))
-stats_pol_type_L_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_econ==1), .x))
-stats_pol_type_L_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_econ==1), .x))
+stats_pol_type_H_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_H_exp_econ==1), .x))
+stats_pol_type_H_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_L_exp_econ==1), .x))
+stats_pol_type_L_reach_H_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_H_exp_econ==1), .x))
+stats_pol_type_L_reach_L_exp_econ <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_L_exp_econ==1), .x))
 
-stats_pol_type_H_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_exp_cult==1), .x))
-stats_pol_type_H_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_exp_cult==1), .x))
-stats_pol_type_L_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_exp_cult==1), .x))
-stats_pol_type_L_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_exp_cult==1), .x))
+stats_pol_type_H_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_H_exp_cult==1), .x))
+stats_pol_type_H_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_L_exp_cult==1), .x))
+stats_pol_type_L_reach_H_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_H_exp_cult==1), .x))
+stats_pol_type_L_reach_L_exp_cult <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_L_exp_cult==1), .x))
 
-stats_pol_ranking_1_100 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100 <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1-100"), .x))
 stats_pol_ranking_1_100$Type <- "1-100"
 
-stats_pol_ranking_101_500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500 <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "101-500"), .x))
 stats_pol_ranking_101_500$Type <- "101-500"
 
-stats_pol_ranking_501_1500 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500 <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "501-1500"), .x))
 stats_pol_ranking_501_1500$Type <- "501-1500"
 
-stats_pol_ranking_1501 <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501 <- map_df(econ_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1501+"), .x))
 stats_pol_ranking_1501$Type <- "1501+"
-
-stats_pol_is_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
-stats_pol_isnt_US <- map_df(econ_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
 
 stats_pol_us_users <- map_df(econ_var, ~calculate_stats(users_df%>% filter(is_bot_50==0), .x))
 
@@ -946,12 +933,6 @@ stats_pol_rank <- bind_rows(
 )
 stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
 
-stats_pol_US <- bind_rows(
-  mutate(stats_pol_is_US, Type = "US"),
-  mutate(stats_pol_isnt_US, Type = "Non-US")
-)
-stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
-
 stats_pol_main$Type <- "Main"
 stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
 
@@ -964,13 +945,12 @@ stats_pol_reach_by_exp_econ$Label <- factor(stats_pol_reach_by_exp_econ$Term, le
 stats_pol_reach_by_exp_cult$Label <- factor(stats_pol_reach_by_exp_cult$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
 stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
 stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
-stats_pol_US$Label <- factor(stats_pol_US$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
 stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = econ_var, labels = topic_label_mapping[econ_var])
 
 stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, 
                             stats_pol_reach_by_exp_econ %>%mutate(exp="econ"), 
                             stats_pol_reach_by_exp_cult%>%mutate(exp="cult"), 
-                            stats_pol_gender, stats_pol_rank, stats_pol_US,stats_pol_us_users)
+                            stats_pol_gender, stats_pol_rank, stats_pol_us_users)
 
 stats_pol_comb %<>% mutate(exp = ifelse(is.na(exp),"other", exp))
 # Filter out the rows that don't meet the condition
@@ -1004,7 +984,6 @@ stats_pol_comb$Group <- with(stats_pol_comb, case_when(
   Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
   Type %in% c("High R-E", "High R-Not E", "Low R-E", "Low R-Not E") ~ "Reach (R) by Expertise (E)",
   Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
-  Type %in% c("US", "Non-US") ~ "Country",
   Type %in% c("US users") ~ "US General Twitter Users"
 ))
 stats_pol_comb$Group <- factor(
@@ -1015,7 +994,6 @@ stats_pol_comb$Group <- factor(
     "Fields",
     "Reach (R) by Expertise (E)",
     "University Rankings",
-    "Country",
     "Field Match",
     "US General Twitter Users"
   )
@@ -1027,7 +1005,6 @@ stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
   "STEM", "Soc. Sciences", "Humanities",
   "High R-E", "High R-Not E", "Low R-E", "Low R-Not E",
   "1501+", "501-1500","101-500", "1-100",  
-  "Non-US", "US",
   "Does Culture", "Does Economics", "Does Neither",
   "US users"
 ))
@@ -1040,7 +1017,6 @@ color_values <- c(
   "High R-E" = "#A65628", "High R-Not E" = "#F781BF",
   "Low R-E" = "#999999", "Low R-Not E" = "gold2",
   "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
-  "US" = "red3", "Non-US" = "grey40",
   "Does Culture" = "cyan3", "Does Economics" = "orange2", "Does Neither" = "grey40",
   "US users"="purple3"
 )
@@ -1097,34 +1073,31 @@ ggsave("edf3.pdf", p_all_fig3, width = 180 / 25.4, height = 180 / 25.4, device =
 Extended Data Figure 4
 ```{r}
 # Map the function over each variable group and combine results
-stats_pol_main <- map_df(beh_var, ~calculate_stats(repl_df, .x))
+stats_pol_main <- map_df(beh_var, ~calculate_stats(repl_df_us, .x))
 
-stats_pol_is_female <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_female==1), .x))
-stats_pol_is_male <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_male==1), .x))
+stats_pol_is_female <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(is_female==1), .x))
+stats_pol_is_male <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(is_male==1), .x))
 
-stats_pol_is_stem <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_stem==1), .x))
-stats_pol_is_soc_sci <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_soc_sci==1), .x))
-stats_pol_is_humanities <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_humanities==1), .x))
+stats_pol_is_stem <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(is_stem==1), .x))
+stats_pol_is_soc_sci <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(is_soc_sci==1), .x))
+stats_pol_is_humanities <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(is_humanities==1), .x))
 
-stats_pol_type_H_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_H_cred==1), .x))
-stats_pol_type_H_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_H_reach_L_cred==1), .x))
-stats_pol_type_L_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_H_cred==1), .x))
-stats_pol_type_L_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(type_L_reach_L_cred==1), .x))
+stats_pol_type_H_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_H_cred==1), .x))
+stats_pol_type_H_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(type_H_reach_L_cred==1), .x))
+stats_pol_type_L_reach_H_cred <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_H_cred==1), .x))
+stats_pol_type_L_reach_L_cred <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(type_L_reach_L_cred==1), .x))
 
-stats_pol_ranking_1_100 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1-100"), .x))
+stats_pol_ranking_1_100 <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1-100"), .x))
 stats_pol_ranking_1_100$Type <- "1-100"
 
-stats_pol_ranking_101_500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "101-500"), .x))
+stats_pol_ranking_101_500 <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "101-500"), .x))
 stats_pol_ranking_101_500$Type <- "101-500"
 
-stats_pol_ranking_501_1500 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "501-1500"), .x))
+stats_pol_ranking_501_1500 <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "501-1500"), .x))
 stats_pol_ranking_501_1500$Type <- "501-1500"
 
-stats_pol_ranking_1501 <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(ranking_cat == "1501+"), .x))
+stats_pol_ranking_1501 <- map_df(beh_var, ~calculate_stats(repl_df_us %>% filter(ranking_cat == "1501+"), .x))
 stats_pol_ranking_1501$Type <- "1501+"
-
-stats_pol_is_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==1), .x))
-stats_pol_isnt_US <- map_df(beh_var, ~calculate_stats(repl_df %>% filter(is_US==0), .x))
 
 stats_pol_us_users <- map_df(beh_var, ~calculate_stats(users_df %>% filter(is_bot_50==0), .x))
 
@@ -1157,12 +1130,6 @@ stats_pol_rank <- bind_rows(
 )
 stats_pol_rank$Type <- factor(stats_pol_rank$Type, levels = c("1-100", "101-500", "501-1500", "1501+"))
 
-stats_pol_US <- bind_rows(
-  mutate(stats_pol_is_US, Type = "US"),
-  mutate(stats_pol_isnt_US, Type = "Non-US")
-)
-stats_pol_US$Type <- factor(stats_pol_US$Type, levels = c("US", "Non-US"))
-
 stats_pol_main$Type <- "Main"
 stats_pol_main$Type <- factor(stats_pol_main$Type, levels = "Main")
 
@@ -1174,10 +1141,9 @@ stats_pol_field$Label <- factor(stats_pol_field$Term, levels = beh_var, labels =
 stats_pol_reach_by_cred$Label <- factor(stats_pol_reach_by_cred$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
 stats_pol_gender$Label <- factor(stats_pol_gender$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
 stats_pol_rank$Label <- factor(stats_pol_rank$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
-stats_pol_US$Label <- factor(stats_pol_US$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
 stats_pol_us_users$Label <- factor(stats_pol_us_users$Term, levels = beh_var, labels = topic_label_mapping[beh_var])
 
-stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_cred, stats_pol_gender, stats_pol_rank, stats_pol_US, stats_pol_us_users)
+stats_pol_comb <- bind_rows(stats_pol_main, stats_pol_field, stats_pol_reach_by_cred, stats_pol_gender, stats_pol_rank, stats_pol_us_users)
 
 # Extract the US users values for each Term
 us_users_values <- stats_pol_comb %>%
@@ -1204,7 +1170,6 @@ stats_pol_comb$Group <- with(stats_pol_comb, case_when(
   Type %in% c("STEM", "Soc. Sciences", "Humanities") ~ "Fields",
   Type %in% c("High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C") ~ "Reach (R) by Credibility (C)",
   Type %in% c("1-100", "101-500", "501-1500", "1501+") ~ "University Rankings",
-  Type %in% c("US", "Non-US") ~ "Country",
   Type %in% c("US users") ~ "US General Twitter Users"
 ))
 stats_pol_comb$Group <- factor(
@@ -1215,7 +1180,6 @@ stats_pol_comb$Group <- factor(
     "Fields",
     "Reach (R) by Credibility (C)",
     "University Rankings",
-    "Country",
     "US General Twitter Users"
   )
 )
@@ -1226,7 +1190,6 @@ stats_pol_comb$Type <- factor(stats_pol_comb$Type, levels = c(
   "STEM", "Soc. Sciences", "Humanities",
   "High R-High C", "High R-Low C", "Low R-High C", "Low R-Low C",
   "1501+", "501-1500","101-500", "1-100",  
-  "Non-US", "US",
   "US users"
 ))
 # Color palette setup
@@ -1237,7 +1200,6 @@ color_values <- c(
   "High R-High C" = "#A65628", "High R-Low C" = "#F781BF",
   "Low R-High C" = "#999999", "Low R-Low C" = "gold2",
   "1-100" = "#1F78B4", "101-500" = "#33A02C", "501-1500" = "#e31a1c", "1501+" = "#ff7f00",
-  "US" = "red3", "Non-US" = "grey40",
   "US users"="purple3"
 )
 
@@ -1576,7 +1538,49 @@ for (varname in variables_to_compare) {
 
 ```
 
-## High vs Low Reach with Expertise
+## Social Media Reach vs Expertise
+
+climate action
+```{r}
+# High-reach non-experts (low expertise) vs high-reach experts on climate action stance
+t.test(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+# Low-reach subject matter experts vs high-reach non-experts on climate action stance
+t.test(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+
+```
+
+techno opt
+```{r}
+# High-reach non-experts (low expertise) vs high-reach experts on TO stance
+t.test(pro_techno_prop ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(pro_techno_prop ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+# Low-reach subject matter experts vs high-reach non-experts on TO stance
+t.test(pro_techno_prop ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(pro_techno_prop ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+
+```
+
+beh adj
+```{r}
+# High-reach non-experts (low expertise) vs high-reach experts on BA stance
+t.test(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+# Low-reach subject matter experts vs high-reach non-experts on BA stance
+t.test(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+cohen.d(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+
+
+
+```
+
+Normality and other tests for assumptions
 ```{r}
 # 1. Define helper functions
 calc_descriptives <- function(x) {
@@ -1616,12 +1620,13 @@ compare_groups <- function(data, outcome, group_var, group_val, ref_val) {
   desc1 <- calc_descriptives(group1)
   desc2 <- calc_descriptives(group2)
   
-  # Normality
+  # Normality metrics
   norm1 <- check_normality(group1)
   norm2 <- check_normality(group2)
   
   # Levene’s test
-  levene_out <- check_variance_homogeneity(c(group1, group2), c(rep("Group1", length(group1)), rep("Group2", length(group2))))
+  levene_out <- check_variance_homogeneity(c(group1, group2), 
+               c(rep("Group1", length(group1)), rep("Group2", length(group2))))
   
   # Welch’s t-test (default var.equal=FALSE)
   t_out <- t.test(group1, group2, var.equal = FALSE)
@@ -1639,53 +1644,193 @@ compare_groups <- function(data, outcome, group_var, group_val, ref_val) {
   )
 }
 
-# 2. Define groups and variables
-variables <- c("stance_climate_action")
-comparisons <- list(
-  list(group = "type_H_reach_H_exp_climate", val = 1, ref = 0, label = "High-reach, high-credibility experts"),
-  list(group = "type_H_reach_L_exp_climate", val = 1, ref = 0, label = "High-reach, low-credibility academics"),
-  list(group = "type_L_reach_H_exp_climate", val = 1, ref = 0, label = "Low-reach, high-credibility experts")
+#-------------------------------------------
+# Climate Action Comparisons
+#-------------------------------------------
+# Comparison 1: High-reach experts vs. high-reach non-experts 
+res_ca_hr <- compare_groups(
+  data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "stance_climate_action",
+  group_var = "type_H_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
 )
+cat("=== Climate Action: High-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (High-reach experts): N =", res_ca_hr$group1_stats$n, 
+    ", Mean =", round(res_ca_hr$group1_stats$mean, 4),
+    ", SD =", round(res_ca_hr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_ca_hr$group1_stats$ci_lower, 4), ",", round(res_ca_hr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ca_hr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_ca_hr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_ca_hr$group2_stats$n, 
+    ", Mean =", round(res_ca_hr$group2_stats$mean, 4),
+    ", SD =", round(res_ca_hr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_ca_hr$group2_stats$ci_lower, 4), ",", round(res_ca_hr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ca_hr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_ca_hr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_ca_hr$levene$df1, ",", res_ca_hr$levene$df2, ") = ",
+    round(res_ca_hr$levene$f_value, 2), ", p =", formatC(res_ca_hr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_ca_hr$t_test$parameter, 2), ") = ", 
+    round(res_ca_hr$t_test$statistic, 3), ", p =", formatC(res_ca_hr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_ca_hr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_ca_hr$cohen_d, 3), "\n\n")
 
-# 3. Compare groups
-for (varname in variables) {
-  for (comp in comparisons) {
-    res <- compare_groups(
-      data = repl_df,
-      outcome = varname,
-      group_var = comp$group,
-      group_val = comp$val,
-      ref_val = comp$ref
-    )
-    
-    cat("=== Comparing:", comp$label, "===\n")
-    cat("Group 1: N =", res$group1_stats$n, "Mean =", round(res$group1_stats$mean, 4),
-        "SD =", round(res$group1_stats$sd, 4), "95% CI = [", round(res$group1_stats$ci_lower, 4),
-        ",", round(res$group1_stats$ci_upper, 4), "]\n")
-    cat("Group 2: N =", res$group2_stats$n, "Mean =", round(res$group2_stats$mean, 4),
-        "SD =", round(res$group2_stats$sd, 4), "95% CI = [", round(res$group2_stats$ci_lower, 4),
-        ",", round(res$group2_stats$ci_upper, 4), "]\n")
-    
-    cat("Normality (Group 1): Skewness =", round(res$normality$group1$skewness, 3),
-        ", Kurtosis =", round(res$normality$group1$kurtosis, 3), "\n")
-    cat("Normality (Group 2): Skewness =", round(res$normality$group2$skewness, 3),
-        ", Kurtosis =", round(res$normality$group2$kurtosis, 3), "\n")
-    
-    cat("Levene’s Test: F(", res$levene$df1, ",", res$levene$df2, ") =", round(res$levene$f_value, 2),
-        ", p =", formatC(res$levene$p_value, format = "f", digits = 4), "\n")
-    
-    cat("Welch’s t-test: t(", round(res$t_test$parameter, 2), ") =", round(res$t_test$statistic, 3),
-        ", p =", formatC(res$t_test$p.value, format = "f", digits = 4), ", Mean Diff =", round(res$t_test$estimate[1] - res$t_test$estimate[2], 4), "\n")
-    cat("Cohen’s d:", round(res$cohen_d, 3), "\n\n")
-  }
-}
+
+# Comparison 2: Low-reach experts vs. high-reach non-experts 
+res_ca_lr <- compare_groups(
+  data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "stance_climate_action",
+  group_var = "type_L_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
+)
+cat("=== Climate Action: Low-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (Low-reach experts): N =", res_ca_lr$group1_stats$n, 
+    ", Mean =", round(res_ca_lr$group1_stats$mean, 4),
+    ", SD =", round(res_ca_lr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_ca_lr$group1_stats$ci_lower, 4), ",", round(res_ca_lr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ca_lr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_ca_lr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_ca_lr$group2_stats$n, 
+    ", Mean =", round(res_ca_lr$group2_stats$mean, 4),
+    ", SD =", round(res_ca_lr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_ca_lr$group2_stats$ci_lower, 4), ",", round(res_ca_lr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ca_lr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_ca_lr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_ca_lr$levene$df1, ",", res_ca_lr$levene$df2, ") = ",
+    round(res_ca_lr$levene$f_value, 2), ", p =", formatC(res_ca_lr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_ca_lr$t_test$parameter, 2), ") = ", 
+    round(res_ca_lr$t_test$statistic, 3), ", p =", formatC(res_ca_lr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_ca_lr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_ca_lr$cohen_d, 3), "\n\n")
+
+
+#-------------------------------------------
+# Techno-Optimism Comparisons
+#-------------------------------------------
+# Comparison 1: High-reach experts vs. high-reach non-experts 
+res_to_hr <- compare_groups(
+  data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "pro_techno_prop",
+  group_var = "type_H_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
+)
+cat("=== Techno-Optimism: High-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (High-reach experts): N =", res_to_hr$group1_stats$n, 
+    ", Mean =", round(res_to_hr$group1_stats$mean, 4),
+    ", SD =", round(res_to_hr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_to_hr$group1_stats$ci_lower, 4), ",", round(res_to_hr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_to_hr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_to_hr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_to_hr$group2_stats$n, 
+    ", Mean =", round(res_to_hr$group2_stats$mean, 4),
+    ", SD =", round(res_to_hr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_to_hr$group2_stats$ci_lower, 4), ",", round(res_to_hr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_to_hr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_to_hr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_to_hr$levene$df1, ",", res_to_hr$levene$df2, ") = ",
+    round(res_to_hr$levene$f_value, 2), ", p =", formatC(res_to_hr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_to_hr$t_test$parameter, 2), ") = ", 
+    round(res_to_hr$t_test$statistic, 3), ", p =", formatC(res_to_hr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_to_hr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_to_hr$cohen_d, 3), "\n\n")
+
+# Comparison 2: Low-reach experts vs. high-reach non-experts 
+res_to_lr <- compare_groups(
+  data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "pro_techno_prop",
+  group_var = "type_L_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
+)
+cat("=== Techno-Optimism: Low-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (Low-reach experts): N =", res_to_lr$group1_stats$n, 
+    ", Mean =", round(res_to_lr$group1_stats$mean, 4),
+    ", SD =", round(res_to_lr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_to_lr$group1_stats$ci_lower, 4), ",", round(res_to_lr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_to_lr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_to_lr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_to_lr$group2_stats$n, 
+    ", Mean =", round(res_to_lr$group2_stats$mean, 4),
+    ", SD =", round(res_to_lr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_to_lr$group2_stats$ci_lower, 4), ",", round(res_to_lr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_to_lr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_to_lr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_to_lr$levene$df1, ",", res_to_lr$levene$df2, ") = ",
+    round(res_to_lr$levene$f_value, 2), ", p =", formatC(res_to_lr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_to_lr$t_test$parameter, 2), ") = ", 
+    round(res_to_lr$t_test$statistic, 3), ", p =", formatC(res_to_lr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_to_lr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_to_lr$cohen_d, 3), "\n\n")
+
+#-------------------------------------------
+# Behavioral Adjustment Comparisons
+#-------------------------------------------
+# Comparison 1: High-reach experts vs. high-reach non-experts 
+res_ba_hr <- compare_groups(
+  data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "pro_beh_prop",
+  group_var = "type_H_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
+)
+cat("=== Behavioral Adjustment: High-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (High-reach experts): N =", res_ba_hr$group1_stats$n, 
+    ", Mean =", round(res_ba_hr$group1_stats$mean, 4),
+    ", SD =", round(res_ba_hr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_ba_hr$group1_stats$ci_lower, 4), ",", round(res_ba_hr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ba_hr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_ba_hr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_ba_hr$group2_stats$n, 
+    ", Mean =", round(res_ba_hr$group2_stats$mean, 4),
+    ", SD =", round(res_ba_hr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_ba_hr$group2_stats$ci_lower, 4), ",", round(res_ba_hr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ba_hr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_ba_hr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_ba_hr$levene$df1, ",", res_ba_hr$levene$df2, ") = ",
+    round(res_ba_hr$levene$f_value, 2), ", p =", formatC(res_ba_hr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_ba_hr$t_test$parameter, 2), ") = ", 
+    round(res_ba_hr$t_test$statistic, 3), ", p =", formatC(res_ba_hr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_ba_hr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_ba_hr$cohen_d, 3), "\n\n")
+
+# Comparison 2: Low-reach experts vs. high-reach non-experts 
+res_ba_lr <- compare_groups(
+  data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1),
+  outcome = "pro_beh_prop",
+  group_var = "type_L_reach_H_exp_climate",
+  group_val = 1,
+  ref_val = 0
+)
+cat("=== Behavioral Adjustment: Low-reach experts vs. high-reach non-experts ===\n")
+cat("Group 1 (Low-reach experts): N =", res_ba_lr$group1_stats$n, 
+    ", Mean =", round(res_ba_lr$group1_stats$mean, 4),
+    ", SD =", round(res_ba_lr$group1_stats$sd, 4),
+    ", 95% CI = [", round(res_ba_lr$group1_stats$ci_lower, 4), ",", round(res_ba_lr$group1_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ba_lr$normality$group1$skewness, 3), 
+    ", Kurtosis =", round(res_ba_lr$normality$group1$kurtosis, 3), "\n")
+cat("Group 2 (High-reach non-experts): N =", res_ba_lr$group2_stats$n, 
+    ", Mean =", round(res_ba_lr$group2_stats$mean, 4),
+    ", SD =", round(res_ba_lr$group2_stats$sd, 4),
+    ", 95% CI = [", round(res_ba_lr$group2_stats$ci_lower, 4), ",", round(res_ba_lr$group2_stats$ci_upper, 4), "]\n")
+cat("Skewness =", round(res_ba_lr$normality$group2$skewness, 3), 
+    ", Kurtosis =", round(res_ba_lr$normality$group2$kurtosis, 3), "\n")
+cat("Levene's Test: F(", res_ba_lr$levene$df1, ",", res_ba_lr$levene$df2, ") = ",
+    round(res_ba_lr$levene$f_value, 2), ", p =", formatC(res_ba_lr$levene$p_value, format = "f", digits = 4), "\n")
+cat("Welch's t-test: t(", round(res_ba_lr$t_test$parameter, 2), ") = ", 
+    round(res_ba_lr$t_test$statistic, 3), ", p =", formatC(res_ba_lr$t_test$p.value, format = "f", digits = 4), 
+    ", Mean Diff =", round(diff(res_ba_lr$t_test$estimate), 4), "\n")
+cat("Cohen's d:", round(res_ba_lr$cohen_d, 3), "\n\n")
+
 
 ```
 
 
-## Climate Action Stance: University Rankings;  US-based vs Non-US-based academics
 
+## Climate Action Stance: University Rankings;  US-based vs Non-US-based academics
 ```{r}
+# Create indicator variables for ranking categories (for any analyses that may need them)
 repl_df <- repl_df %>%
   mutate(is_top100 = ifelse(ranking_cat == "1-100", 1, 0),
          is_101_500 = ifelse(ranking_cat == "101-500", 1, 0),
@@ -1694,7 +1839,7 @@ repl_df <- repl_df %>%
 
 # Function for detailed comparison
 detailed_comparison <- function(data, outcome, groupvar, group1_label, group2_label) {
-  # Subset data
+  # Subset data based on binary indicator in groupvar
   data_group1 <- data %>% filter(!!sym(groupvar) == 1)
   data_group2 <- data %>% filter(!!sym(groupvar) == 0)
   
@@ -1714,10 +1859,10 @@ detailed_comparison <- function(data, outcome, groupvar, group1_label, group2_la
   skewness2 <- skewness(data_group2[[outcome]], na.rm = TRUE)
   kurtosis2 <- kurtosis(data_group2[[outcome]], na.rm = TRUE)
   
-  # Levene’s test for variance homogeneity
+  # Levene’s test for variance homogeneity (explicitly convert group to factor)
   combined_data <- data.frame(
     value = c(data_group1[[outcome]], data_group2[[outcome]]),
-    group = c(rep(group1_label, n1), rep(group2_label, n2))
+    group = factor(c(rep(group1_label, n1), rep(group2_label, n2)))
   )
   levene_result <- leveneTest(value ~ group, data = combined_data)
   
@@ -1760,50 +1905,82 @@ detailed_comparison <- function(data, outcome, groupvar, group1_label, group2_la
   cat("Cohen’s d:", round(cohen_d_result$estimate, 3), "\n\n")
 }
 
-# Climate Action: US vs Non-US
+# --- US vs. Non-US Comparisons ---
+
+# Climate Action: U.S.-based vs. Non-U.S.-based
 detailed_comparison(repl_df, "stance_climate_action", "is_US", "U.S.-based", "Non-U.S.-based")
 
-# Behavioral Adjustments: US vs Non-US
+# Behavioral Adjustments: U.S.-based vs. Non-U.S.-based
 detailed_comparison(repl_df, "pro_beh_prop", "is_US", "U.S.-based", "Non-U.S.-based")
 
-# University Rankings: 1-100 vs 101-500
-detailed_comparison(repl_df, "stance_climate_action", "is_top100", "Top 100 Universities", "101-500 Universities")
+# Techno Opt: U.S.-based vs. Non-U.S.-based
+detailed_comparison(repl_df, "pro_techno_prop", "is_US", "U.S.-based", "Non-U.S.-based")
 
-# University Rankings: 1-100 vs 501-1500
-detailed_comparison(repl_df, "stance_climate_action", "is_501_1500", "Top 100 Universities", "501-1500 Universities")
-
-# University Rankings: 1-100 vs 1501+
-detailed_comparison(repl_df, "stance_climate_action", "is_1501plus", "Top 100 Universities", "1501+ Universities")
-
-```
+# --- University Rankings Comparisons ---
+# For each comparison, we subset to only include the two groups of interest 
+# and create a new binary indicator (is_top100_subset) for Top 100 vs. the other group.
 
 
-## Behavioral Adjustments Stance: High vs Low Reach with Expertise
-```{r}
-t.test(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df)
-cohen.d(pro_beh_prop ~ type_H_reach_H_exp_climate, data = repl_df)
+##### climate action
+# University Rankings: 1-100 vs. 101-500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "101-500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "stance_climate_action", "is_top100_subset", "Top 100 Universities", "101-500 Universities")
 
-t.test(pro_beh_prop ~ type_H_reach_L_exp_climate, data = repl_df)
-cohen.d(pro_beh_prop ~ type_H_reach_L_exp_climate, data = repl_df)
+# University Rankings: 1-100 vs. 501-1500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "501-1500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "stance_climate_action", "is_top100_subset", "Top 100 Universities", "501-1500 Universities")
 
-t.test(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df)
-cohen.d(pro_beh_prop ~ type_L_reach_H_exp_climate, data = repl_df)
+# University Rankings: 1-100 vs. 1501+
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "1501+")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "stance_climate_action", "is_top100_subset", "Top 100 Universities", "1501+ Universities")
 
-t.test(pro_beh_prop ~ type_L_reach_L_exp_climate, data = repl_df)
-cohen.d(pro_beh_prop ~ type_L_reach_L_exp_climate, data = repl_df)
 
-```
 
-## Social Media Reach vs Expertise
-```{r}
-# High-reach non-experts (low expertise) vs high-reach experts on climate action stance
-t.test(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
-cohen.d(stance_climate_action ~ type_H_reach_H_exp_climate, data = repl_df %>% filter(type_H_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+##### TO
+# University Rankings: 1-100 vs. 101-500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "101-500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_techno_prop", "is_top100_subset", "Top 100 Universities", "101-500 Universities")
 
-# Low-reach subject matter experts vs high-reach non-experts on climate action stance
-t.test(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
-cohen.d(stance_climate_action ~ type_L_reach_H_exp_climate, data = repl_df %>% filter(type_L_reach_H_exp_climate == 1 | type_H_reach_L_exp_climate == 1))
+# University Rankings: 1-100 vs. 501-1500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "501-1500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_techno_prop", "is_top100_subset", "Top 100 Universities", "501-1500 Universities")
 
+# University Rankings: 1-100 vs. 1501+
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "1501+")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_techno_prop", "is_top100_subset", "Top 100 Universities", "1501+ Universities")
+
+
+
+##### BA
+# University Rankings: 1-100 vs. 101-500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "101-500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_beh_prop", "is_top100_subset", "Top 100 Universities", "101-500 Universities")
+
+# University Rankings: 1-100 vs. 501-1500
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "501-1500")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_beh_prop", "is_top100_subset", "Top 100 Universities", "501-1500 Universities")
+
+# University Rankings: 1-100 vs. 1501+
+ranking_subset <- repl_df %>% 
+  filter(ranking_cat %in% c("1-100", "1501+")) %>%
+  mutate(is_top100_subset = ifelse(ranking_cat == "1-100", 1, 0))
+detailed_comparison(ranking_subset, "pro_beh_prop", "is_top100_subset", "Top 100 Universities", "1501+ Universities")
 
 ```
 
@@ -1987,28 +2164,80 @@ compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2
 }
 
 ################################################################################
-## High-Reach Experts vs Non-Experts for Cultural/Econ stances
+## Comparing Two Groups for Stance Types: Expertise and Reach
 ################################################################################
 
-# Example: High-reach, non-expert vs. High-reach, expert on Cultural Liberalism
-res_cult_nonexpert_vs_expert <- compare_two_groups(
-  df = repl_df,
-  outcome = "stance_cultural_liberalism",
-  groupvar = "type_H_reach_H_exp_cult",   # a 0/1 variable
-  label_group1 = 0,  # e.g. "non-expert"
-  label_group2 = 1   # e.g. "expert"
-)
-print(res_cult_nonexpert_vs_expert)
+# Update grouping variable for cultural liberalism using all four categories
+repl_df <- repl_df %>%
+  mutate(exp_cult = case_when(
+    type_H_reach_H_exp_cult == 1 ~ "High-Reach Expert",
+    type_H_reach_L_exp_cult == 1 ~ "High-Reach Non-Expert",
+    type_L_reach_H_exp_cult == 1 ~ "Low-Reach Expert",
+    type_L_reach_L_exp_cult == 1 ~ "Low-Reach Non-Expert",
+    TRUE ~ NA_character_
+  ))
 
-# Example: High-reach, non-expert vs. High-reach, expert on Economic Collectivism
-res_econ_nonexpert_vs_expert <- compare_two_groups(
-  df = repl_df,
-  outcome = "stance_econ_collectivism",
-  groupvar = "type_H_reach_H_exp_econ",
-  label_group1 = 0, 
-  label_group2 = 1
+# Update grouping variable for economic collectivism using all four categories
+repl_df <- repl_df %>%
+  mutate(exp_econ = case_when(
+    type_H_reach_H_exp_econ == 1 ~ "High-Reach Expert",
+    type_H_reach_L_exp_econ == 1 ~ "High-Reach Non-Expert",
+    type_L_reach_H_exp_econ == 1 ~ "Low-Reach Expert",
+    type_L_reach_L_exp_econ == 1 ~ "Low-Reach Non-Expert",
+    TRUE ~ NA_character_
+  ))
+
+#--------------------------------------------------------------------------
+# Comparison for Cultural Liberalism:
+# 1. High-Reach Non-Expert vs. High-Reach Expert
+#--------------------------------------------------------------------------
+res_cult_highreach <- compare_two_groups(
+  df = repl_df %>% filter(exp_cult %in% c("High-Reach Expert", "High-Reach Non-Expert")),
+  outcome = "stance_cultural_liberalism",
+  groupvar = "exp_cult",
+  label_group1 = "High-Reach Expert",
+  label_group2 = "High-Reach Non-Expert"
 )
-print(res_econ_nonexpert_vs_expert)
+
+print(res_cult_highreach)
+
+#--------------------------------------------------------------------------
+# 2. Low-Reach Expert vs. High-Reach Non-Expert
+#--------------------------------------------------------------------------
+res_cult_low_vs_highnon <- compare_two_groups(
+  df = repl_df %>% filter(exp_cult %in% c("Low-Reach Expert", "High-Reach Non-Expert")),
+  outcome = "stance_cultural_liberalism",
+  groupvar = "exp_cult",
+  label_group1 = "Low-Reach Expert",
+  label_group2 = "High-Reach Non-Expert"
+)
+print(res_cult_low_vs_highnon)
+
+#--------------------------------------------------------------------------
+# Comparison for Economic Collectivism:
+# 1. High-Reach Non-Expert vs. High-Reach Expert
+#--------------------------------------------------------------------------
+res_econ_highreach <- compare_two_groups(
+  df = repl_df %>% filter(exp_econ %in% c("High-Reach Expert", "High-Reach Non-Expert")),
+  outcome = "stance_econ_collectivism",
+  groupvar = "exp_econ",
+  label_group1 = "High-Reach Expert",
+  label_group2 = "High-Reach Non-Expert"
+)
+print(res_econ_highreach)
+
+#--------------------------------------------------------------------------
+# 2. Low-Reach Expert vs. High-Reach Non-Expert
+#--------------------------------------------------------------------------
+res_econ_low_vs_highnon <- compare_two_groups(
+  df = repl_df %>% filter(exp_econ %in% c("Low-Reach Expert", "High-Reach Non-Expert")),
+  outcome = "stance_econ_collectivism",
+  groupvar = "exp_econ",
+  label_group1 = "Low-Reach Expert",
+  label_group2 = "High-Reach Non-Expert"
+)
+print(res_econ_low_vs_highnon)
+
 
 ################################################################################
 ## Gender differences on Cultural/Econ stances
@@ -2263,6 +2492,20 @@ res_low_reach_high_cred <- compare_two_groups(
 print(res_low_reach_high_cred)
 
 ################################################################################
+## Gender Differences for Egocentrism
+################################################################################
+
+res_gender_ego <- compare_two_groups(
+  df = repl_df,
+  outcome = "egocentrism",
+  groupvar = "is_male",
+  label_group1 = 0,  # Female
+  label_group2 = 1   # Male
+)
+print(res_gender_ego)
+
+
+################################################################################
 ## Field Differences for Egocentrism
 ################################################################################
 
@@ -2455,6 +2698,20 @@ compare_two_groups <- function(df, outcome, groupvar, label_group1, label_group2
     group2_stats = list(mean = mean_g2, sd = sd_g2, ci = ci_g2)
   )
 }
+
+################################################################################
+## Gender Differences for Toxicity
+################################################################################
+
+res_gender_tox <- compare_two_groups(
+  df = repl_df,
+  outcome = "toxicity",
+  groupvar = "is_male",
+  label_group1 = 0,  # Female
+  label_group2 = 1   # Male
+)
+print(res_gender_tox)
+
 
 ################################################################################
 ## Field Differences for Toxicity
@@ -2750,6 +3007,29 @@ res_low_reach_high_cred <- compare_two_groups(
   label_group2 = 1   # Low reach, high credibility
 )
 print(res_low_reach_high_cred)
+
+################################################################################
+## University Rankings for Emotionality-Reasoning
+################################################################################
+
+res_top100_vs_101_500_emotionality <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "101-500")),
+  outcome = "emotionality",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "101-500"
+)
+print(res_top100_vs_101_500_emotionality)
+
+res_top100_vs_501_1500_emotionality <- compare_two_groups(
+  df = repl_df %>% filter(ranking_cat %in% c("1-100", "501-1500")),
+  outcome = "emotionality",
+  groupvar = "ranking_cat",
+  label_group1 = "1-100",
+  label_group2 = "501-1500"
+)
+print(res_top100_vs_501_1500_emotionality)
+
 
 ################################################################################
 ## U.S.-based vs Non-U.S.-based for Emotionality-Reasoning
