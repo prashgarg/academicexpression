@@ -277,26 +277,42 @@ hline_data <- data.frame(
   yintercept = c(0, 0, 1, 0, 0, 0, 0, 0)  # 1 for Emotionality/Reasoning, 0 for others
 )
 
+# Create a data frame with y-axis limits per Label
+y_limits <- data.frame(
+  Label = factor(c("Egocentrism", "Toxicity", "Emotionality/Reasoning", 
+                   "Climate Action", "Techno-Optimism", "Behavioural Adjustment", 
+                   "Cultural liberalism", "Economic Collectivism"),
+                 levels = c("Egocentrism", "Toxicity", "Emotionality/Reasoning", 
+                            "Climate Action", "Techno-Optimism", "Behavioural Adjustment", 
+                            "Cultural liberalism", "Economic Collectivism")),
+  y_min = c(0, 0, 0, 0, 0, 0, 0, 0),
+  y_max = c(0.45, 0.06, 1, 0.13, 0.13, 0.13, 0.13, 0.13)
+)
 
-# Revised plot with shaded region along a line
+dummy_date <- as.Date("2016-01-01")  # or use min(results_df_combined$Date, na.rm=TRUE)
+
 p_combined <- ggplot(results_df_combined %>% filter(Group == "Main"), aes(x = Date, y = value)) +
   geom_smooth(
-    method = "loess", formula = 'y ~ x', se = TRUE, color = "black", size = 0.5,
-    fill = "grey80", alpha = 0.3  # Shaded region for variability
+    method = "loess", formula = 'y ~ x', se = TRUE, 
+    color = "black", size = 0.5, fill = "grey80", alpha = 0.3
   ) +
-  geom_hline(data = hline_data, aes(yintercept = yintercept), linetype = "dotted", color = "grey99", size = 0.5,alpha=0) +  # Add horizontal lines
+  geom_hline(data = hline_data, aes(yintercept = yintercept), linetype = "dotted", color = "grey99", size = 0.5, alpha = 0) +
   labs(y = "Behavioural Expression", x = "Year by Month") +
-  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +  # 3x3 layout
-  theme_classic(base_size = 7) +  # Journal-compliant font size
+  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +
+  theme_classic(base_size = 7) +
   theme(
-    text = element_text(family = "Helvetica"),  # Use Helvetica font
-    strip.text = element_text(face = "bold", size = 7),  # Adjust facet label size
-    axis.text = element_text(size = 7),  # Adjust axis text size
-    axis.title = element_text(size = 7),  # Adjust axis title size
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank(),  # Remove minor gridlines
-    panel.background = element_blank()  # Ensure clean panel backgrounds
-  )
+    text = element_text(family = "Helvetica"),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text = element_text(size = 7),
+    axis.title = element_text(size = 7),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank()
+  ) +
+  # Add blank layers with a dummy date to enforce fixed y-axis limits per facet
+  geom_blank(data = y_limits, mapping = aes(x = dummy_date, y = y_min)) +
+  geom_blank(data = y_limits, mapping = aes(x = dummy_date, y = y_max))
+
 
 # Save as EPS and PDF formats for journal compliance
 ggsave("fig5.eps", p_combined, width = 180 / 25.4, height = 120 / 25.4, device = cairo_ps)
@@ -371,8 +387,6 @@ results_df_est_comb_econ_var2$Label <- factor(results_df_est_comb_econ_var2$Labe
 ```
 
 ## plot
-
-
 ```{r}
 # Combine all datasets into a single data frame
 results_df_combined2 <- bind_rows(
@@ -397,35 +411,53 @@ hline_data2 <- data.frame(
   yintercept = c(0, 0, 1, 0, 0, 0, 0, 0)  # 1 for Emotionality/Reasoning, 0 for others
 )
 
+# Create a data frame with y-axis limits per Label
+y_limits2 <- data.frame(
+  Label = factor(c("Egocentrism", "Toxicity", "Emotionality/Reasoning", 
+                   "Climate Action", "Techno-Optimism", "Behavioural Adjustment", 
+                   "Cultural liberalism", "Economic Collectivism"),
+                 levels = c("Egocentrism", "Toxicity", "Emotionality/Reasoning", 
+                            "Climate Action", "Techno-Optimism", "Behavioural Adjustment", 
+                            "Cultural liberalism", "Economic Collectivism")),
+  y_min = c(0, 0, 0, 0, 0, 0, 0, 0),
+  y_max = c(0.55, 0.09, 1, 0.37, 0.37, 0.37, 0.37, 0.37)
+)
 
-# Revised plot with two series and shaded regions
+# Dummy date for x aesthetic (ensure it's a valid Date object)
+dummy_date <- as.Date("2016-01-01")
+
+# plot with two series and shaded regions, plus fixed y-axis limits for specified labels
 p_combined2 <- ggplot(results_df_combined2, aes(x = Date, y = value, color = Type, fill = Type)) +
   geom_smooth(
     method = "loess", formula = 'y ~ x', se = TRUE, size = 0.5,
     alpha = 0.3  # Shaded region for variability
   ) +
-  geom_hline(data = hline_data2, aes(yintercept = yintercept), linetype = "dotted", color = "grey99",alpha=0, size = 0.1) +  # Add horizontal lines
+  geom_hline(data = hline_data2, aes(yintercept = yintercept), linetype = "dotted", color = "grey99", alpha = 0, size = 0.1) +
   labs(y = "Behavioural Expression", x = "Year by Month", color = "Group", fill = "Group") +
-  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +  # 3x3 layout
-  theme_classic(base_size = 7) +  # Journal-compliant font size
+  facet_wrap(~Label, scales = "free_y", nrow = 3, ncol = 3) +
+  theme_classic(base_size = 7) +
   theme(
-    text = element_text(family = "Helvetica"),  # Use Helvetica font
-    strip.text = element_text(face = "bold", size = 7),  # Adjust facet label size
-    axis.text = element_text(size = 7),  # Adjust axis text size
-    axis.title = element_text(size = 7),  # Adjust axis title size
-    panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank(),  # Remove minor gridlines
-    panel.background = element_blank(),  # Ensure clean panel backgrounds
-    legend.position = "bottom",  # Place legend at the bottom
-    legend.title = element_text(size = 7),  # Adjust legend title size
-    legend.text = element_text(size = 7)  # Adjust legend text size
+    text = element_text(family = "Helvetica"),
+    strip.text = element_text(face = "bold", size = 7),
+    axis.text = element_text(size = 7),
+    axis.title = element_text(size = 7),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(size = 7),
+    legend.text = element_text(size = 7)
   ) +
   scale_color_manual(values = c("Academics" = "steelblue", "General Population" = "indianred")) +
-  scale_fill_manual(values = c("Academics" = "steelblue", "General Population" = "indianred"))
+  scale_fill_manual(values = c("Academics" = "steelblue", "General Population" = "indianred")) +
+  # Add blank layers with a dummy date to enforce fixed y-axis limits for specified measures
+  geom_blank(data = y_limits2, mapping = aes(x = dummy_date, y = y_min), inherit.aes = FALSE) +
+  geom_blank(data = y_limits2, mapping = aes(x = dummy_date, y = y_max), inherit.aes = FALSE)
 
-# Save as EPS and PDF formats for journal compliance
+# Save the adjusted figure as EPS and PDF
 ggsave("fig6.eps", p_combined2, width = 180 / 25.4, height = 120 / 25.4, device = cairo_ps)
 ggsave("fig6.pdf", p_combined2, width = 180 / 25.4, height = 120 / 25.4, device = cairo_pdf)
+
 
 ```
 
